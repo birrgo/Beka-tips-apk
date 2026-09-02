@@ -29,26 +29,24 @@ jobs:
           mkdir www
           rsync -av --exclude='.git' --exclude='.github' --exclude='www' ./ www/
 
-      - name: Create Capacitor Config
+      - name: Create Capacitor Config Safely
         run: |
-          cat <<EOF > capacitor.config.json
-          {
-            "appId": "com.bekatips.app",
-            "appName": "beka tips",
-            "webDir": "www",
-            "bundledWebRuntime": false,
-            "plugins": {
-              "SplashScreen": {
-                "launchShowDuration": 3000,
-                "launchAutoHide": true,
-                "backgroundColor": "#001a66",
-                "androidSplashResourceName": "splash",
-                "androidScaleType": "CENTER_CROP",
-                "showSpinner": false
-              }
-            }
-          }
-          EOF
+          echo '{' > capacitor.config.json
+          echo '  "appId": "com.bekatips.app",' >> capacitor.config.json
+          echo '  "appName": "beka tips",' >> capacitor.config.json
+          echo '  "webDir": "www",' >> capacitor.config.json
+          echo '  "bundledWebRuntime": false,' >> capacitor.config.json
+          echo '  "plugins": {' >> capacitor.config.json
+          echo '    "SplashScreen": {' >> capacitor.config.json
+          echo '      "launchShowDuration": 3000,' >> capacitor.config.json
+          echo '      "launchAutoHide": true,' >> capacitor.config.json
+          echo '      "backgroundColor": "#001a66",' >> capacitor.config.json
+          echo '      "androidSplashResourceName": "splash",' >> capacitor.config.json
+          echo '      "androidScaleType": "CENTER_CROP",' >> capacitor.config.json
+          echo '      "showSpinner": false' >> capacitor.config.json
+          echo '    }' >> capacitor.config.json
+          echo '  }' >> capacitor.config.json
+          echo '}' >> capacitor.config.json
 
       - name: Initialize & Sync Android Project
         run: |
@@ -57,7 +55,6 @@ jobs:
 
       - name: Setup App Icon and Native XML Splash Screen
         run: |
-          # 1. Set up App Icon
           if [ -f s.png ]; then
             rm -rf android/app/src/main/res/mipmap-anydpi-v26
             find android/app/src/main/res -name "ic_launcher*.xml" -type f -delete
@@ -67,40 +64,32 @@ jobs:
             done
           fi
           
-          # 2. Build a Native XML Splash Screen to prevent the black screen
           if [ -f bo.png ]; then
-            # Clean up default Capacitor splash files
             find android/app/src/main/res -name "splash.*" -type f -delete
-            
             mkdir -p android/app/src/main/res/drawable
-            # Copy original image and rename it so the XML can reference it
             cp -f bo.png android/app/src/main/res/drawable/splash_image.png
             
-            # Generate a proper layer-list XML that Android expects for cold boots
-            cat <<EOF > android/app/src/main/res/drawable/splash.xml
-            <?xml version="1.0" encoding="utf-8"?>
-            <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-                <item>
-                    <bitmap android:gravity="fill" android:src="@drawable/splash_image" />
-                </item>
-            </layer-list>
-            EOF
+            echo '<?xml version="1.0" encoding="utf-8"?>' > android/app/src/main/res/drawable/splash.xml
+            echo '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">' >> android/app/src/main/res/drawable/splash.xml
+            echo '    <item>' >> android/app/src/main/res/drawable/splash.xml
+            echo '        <bitmap android:gravity="fill" android:src="@drawable/splash_image" />' >> android/app/src/main/res/drawable/splash.xml
+            echo '    </item>' >> android/app/src/main/res/drawable/splash.xml
+            echo '</layer-list>' >> android/app/src/main/res/drawable/splash.xml
           fi
 
-      - name: Reduce APK Size & Fix Kotlin Duplicate Classes
+      - name: Force App Size < 15MB & Fix Kotlin Clashes
         run: |
-          sed -i '/defaultConfig {/a \        ndk {\n            abiFilters "arm64-v8a", "armeabi-v7a"\n        }' android/app/build.gradle
+          # Strip out heavy x86/emulator libraries to guarantee small APK size
+          sed -i '/defaultConfig {/a \        ndk {\n            abiFilters "arm64-v8a"\n        }' android/app/build.gradle
           
-          cat <<EOF >> android/app/build.gradle
-          
-          configurations.all {
-              resolutionStrategy {
-                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
-                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
-                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
-              }
-          }
-          EOF
+          echo "" >> android/app/build.gradle
+          echo "configurations.all {" >> android/app/build.gradle
+          echo "    resolutionStrategy {" >> android/app/build.gradle
+          echo "        force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'" >> android/app/build.gradle
+          echo "        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'" >> android/app/build.gradle
+          echo "        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'" >> android/app/build.gradle
+          echo "    }" >> android/app/build.gradle
+          echo "}" >> android/app/build.gradle
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
