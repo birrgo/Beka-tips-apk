@@ -35,9 +35,12 @@ jobs:
           npx cap init "beka tips" com.bekatips.app --web-dir www
           npx cap add android
 
-      - name: Replace App Icon with b.png
+      - name: Replace App Icon with s.png
         run: |
           if [ -f s.png ]; then
+            # Delete adaptive icon XML files to prevent duplicate resource errors
+            rm -rf android/app/src/main/res/mipmap-anydpi-v26
+            
             for dir in android/app/src/main/res/mipmap-*/; do
               cp -f s.png "${dir}ic_launcher.png" 2>/dev/null || true
               cp -f s.png "${dir}ic_launcher_round.png" 2>/dev/null || true
