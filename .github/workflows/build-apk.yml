@@ -39,8 +39,8 @@ jobs:
         run: |
           if [ -f b.png ]; then
             for dir in android/app/src/main/res/mipmap-*/; do
-              cp -f b.png "${dir}ic_launcher.png" 2>/dev/null || true
-              cp -f b.png "${dir}ic_launcher_round.png" 2>/dev/null || true
+              cp -f s.png "${dir}ic_launcher.png" 2>/dev/null || true
+              cp -f s.png "${dir}ic_launcher_round.png" 2>/dev/null || true
             done
           fi
 
