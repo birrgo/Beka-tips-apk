@@ -19,40 +19,59 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Capacitor
+      - name: Install Capacitor & Splash Screen Plugin
         run: |
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/splash-screen
 
       - name: Bundle Web Files
         run: |
           mkdir www
           rsync -av --exclude='.git' --exclude='.github' --exclude='www' ./ www/
 
+      - name: Create Capacitor Config with Splash Screen Settings
+        run: |
+          cat <<EOF > capacitor.config.json
+          {
+            "appId": "com.bekatips.app",
+            "appName": "beka tips",
+            "webDir": "www",
+            "bundledWebRuntime": false,
+            "plugins": {
+              "SplashScreen": {
+                "launchShowDuration": 3000,
+                "launchAutoHide": true,
+                "backgroundColor": "#ffffff",
+                "androidSplashResourceName": "splash"
+              }
+            }
+          }
+          EOF
+
       - name: Initialize Android Project
         run: |
-          npx cap init "beka tips" com.bekatips.app --web-dir www
           npx cap add android
 
-      - name: Replace App Icon with s.png
+      - name: Setup App Icon (s.png) & Loading Splash Screen (bo.png)
         run: |
+          # 1. Apply s.png as the App Logo
           if [ -f s.png ]; then
-            # 1. Delete the adaptive icon folder entirely
             rm -rf android/app/src/main/res/mipmap-anydpi-v26
-            
-            # 2. Force delete any remaining XML icon definitions
             find android/app/src/main/res -name "ic_launcher*.xml" -type f -delete
-            
-            # 3. Copy the PNG to standard density folders
             for dir in android/app/src/main/res/mipmap-*/; do
               cp -f s.png "${dir}ic_launcher.png" 2>/dev/null || true
               cp -f s.png "${dir}ic_launcher_round.png" 2>/dev/null || true
             done
           fi
+          
+          # 2. Apply bo.png as the Loading Image (Splash Screen)
+          if [ -f bo.png ]; then
+            mkdir -p android/app/src/main/res/drawable
+            cp -f bo.png android/app/src/main/res/drawable/splash.png
+          fi
 
       - name: Fix Kotlin Duplicate Classes
         run: |
-          # Append a resolution strategy to force a unified Kotlin version
           cat <<EOF >> android/app/build.gradle
           
           configurations.all {
@@ -71,14 +90,14 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Build Debug APK
+      - name: Build Unsigned Release APK (Smaller App Size)
         run: |
           cd android 
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
       - name: Rename APK file
-        run: mv android/app/build/outputs/apk/debug/app-debug.apk beka-tips.apk
+        run: mv android/app/build/outputs/apk/release/app-release-unsigned.apk beka-tips.apk
 
       - name: Upload Beka Tips APK
         uses: actions/upload-artifact@v4
