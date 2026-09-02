@@ -27,7 +27,6 @@ jobs:
       - name: Bundle Web Files
         run: |
           mkdir www
-          # Copies your PWA files into the directory Capacitor expects
           rsync -av --exclude='.git' --exclude='.github' --exclude='www' ./ www/
 
       - name: Initialize Android Project
@@ -38,9 +37,13 @@ jobs:
       - name: Replace App Icon with s.png
         run: |
           if [ -f s.png ]; then
-            # Delete adaptive icon XML files to prevent duplicate resource errors
+            # 1. Delete the adaptive icon folder entirely
             rm -rf android/app/src/main/res/mipmap-anydpi-v26
             
+            # 2. Force delete any remaining XML icon definitions to prevent duplicate resources
+            find android/app/src/main/res -name "ic_launcher*.xml" -type f -delete
+            
+            # 3. Copy the PNG to standard density folders
             for dir in android/app/src/main/res/mipmap-*/; do
               cp -f s.png "${dir}ic_launcher.png" 2>/dev/null || true
               cp -f s.png "${dir}ic_launcher_round.png" 2>/dev/null || true
