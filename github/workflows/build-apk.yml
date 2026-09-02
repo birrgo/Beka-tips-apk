@@ -1,0 +1,58 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main # Triggers the build when pushing to the main branch
+  workflow_dispatch: # Allows manual trigger from the Actions tab
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (If your web app needs building first)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # - name: Install dependencies and build web
+      #   run: |
+      #     npm install
+      #     npm run build
+      #     npx cap sync android # Uncomment if using Capacitor
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Replace App Icon with b.png
+        run: |
+          # Overwrites the default Android icons with your b.png file
+          for dir in android/app/src/main/res/mipmap-*/; do
+            cp -f b.png "${dir}ic_launcher.png" 2>/dev/null || true
+            cp -f b.png "${dir}ic_launcher_round.png" 2>/dev/null || true
+          done
+
+      - name: Make gradlew executable
+        run: chmod +x ./android/gradlew 
+
+      - name: Build Debug APK
+        run: |
+          cd android 
+          ./gradlew assembleDebug
+
+      - name: Rename APK file
+        run: mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/beka-tips.apk
+
+      - name: Upload Beka Tips APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: beka-tips-apk
+          path: android/app/build/outputs/apk/debug/beka-tips.apk
