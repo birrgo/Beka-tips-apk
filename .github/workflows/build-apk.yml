@@ -54,7 +54,6 @@ jobs:
 
       - name: Setup App Icon (s.png) & Loading Splash Screen (bo.png)
         run: |
-          # 1. Apply s.png as the App Logo
           if [ -f s.png ]; then
             rm -rf android/app/src/main/res/mipmap-anydpi-v26
             find android/app/src/main/res -name "ic_launcher*.xml" -type f -delete
@@ -64,14 +63,17 @@ jobs:
             done
           fi
           
-          # 2. Apply bo.png as the Loading Image (Splash Screen)
           if [ -f bo.png ]; then
             mkdir -p android/app/src/main/res/drawable
             cp -f bo.png android/app/src/main/res/drawable/splash.png
           fi
 
-      - name: Fix Kotlin Duplicate Classes
+      - name: Reduce APK Size & Fix Kotlin Duplicate Classes
         run: |
+          # 1. Filter out heavy emulator architectures to drastically reduce APK size
+          sed -i '/defaultConfig {/a \        ndk {\n            abiFilters "arm64-v8a", "armeabi-v7a"\n        }' android/app/build.gradle
+          
+          # 2. Force a unified Kotlin standard library version
           cat <<EOF >> android/app/build.gradle
           
           configurations.all {
@@ -90,14 +92,14 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Build Unsigned Release APK (Smaller App Size)
+      - name: Build Signed Debug APK (Installable)
         run: |
           cd android 
           chmod +x ./gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug
 
       - name: Rename APK file
-        run: mv android/app/build/outputs/apk/release/app-release-unsigned.apk beka-tips.apk
+        run: mv android/app/build/outputs/apk/debug/app-debug.apk beka-tips.apk
 
       - name: Upload Beka Tips APK
         uses: actions/upload-artifact@v4
