@@ -41,8 +41,9 @@ jobs:
               "SplashScreen": {
                 "launchShowDuration": 3000,
                 "launchAutoHide": true,
-                "backgroundColor": "#ffffff",
+                "backgroundColor": "#001a66",
                 "androidSplashResourceName": "splash",
+                "androidScaleType": "CENTER_CROP",
                 "showSpinner": false
               }
             }
@@ -56,6 +57,7 @@ jobs:
 
       - name: Setup App Icon (s.png) & Loading Splash Screen (bo.png)
         run: |
+          # 1. Set up App Icon
           if [ -f s.png ]; then
             rm -rf android/app/src/main/res/mipmap-anydpi-v26
             find android/app/src/main/res -name "ic_launcher*.xml" -type f -delete
@@ -65,16 +67,17 @@ jobs:
             done
           fi
           
+          # 2. Set up Splash Screen
           if [ -f bo.png ]; then
-            mkdir -p android/app/src/main/res/drawable
-            mkdir -p android/app/src/main/res/drawable-port
-            mkdir -p android/app/src/main/res/drawable-land
-            cp -f bo.png android/app/src/main/res/drawable/splash.png
-            cp -f bo.png android/app/src/main/res/drawable-port/splash.png
-            cp -f bo.png android/app/src/main/res/drawable-land/splash.png
+            # Delete Capacitor's default XML splash files to prevent black screen conflicts
+            find android/app/src/main/res -name "splash.xml" -type f -delete
+            find android/app/src/main/res -name "splash.png" -type f -delete
             
-            # Delete dark mode styles so it doesn't force a black background
-            rm -rf android/app/src/main/res/values-night
+            # Copy bo.png to all primary drawable directories
+            for dir in drawable drawable-port drawable-port-hdpi drawable-port-xhdpi drawable-port-xxhdpi drawable-port-xxxhdpi; do
+              mkdir -p "android/app/src/main/res/$dir"
+              cp -f bo.png "android/app/src/main/res/$dir/splash.png"
+            done
           fi
 
       - name: Reduce APK Size & Fix Kotlin Duplicate Classes
