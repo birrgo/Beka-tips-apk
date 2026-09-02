@@ -23,17 +23,10 @@ jobs:
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/splash-screen
 
-      - name: Bundle Web Files & Setup Web Splash
+      - name: Bundle Web Files
         run: |
           mkdir www
           rsync -av --exclude='.git' --exclude='.github' --exclude='www' ./ www/
-          
-          # Copy bo.png to web root and inject full-screen 9:16 overlay into index.html
-          if [ -f bo.png ]; then
-            cp bo.png www/bo.png
-            SPLASH_HTML='<div id="full-pwa-splash" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999999;background:#001a66 url(\"bo.png\") center/cover no-repeat;transition:opacity 0.5s ease;"></div><script>setTimeout(function(){var s=document.getElementById("full-pwa-splash");if(s){s.style.opacity="0";setTimeout(function(){s.remove();},500);}},3000);</script>'
-            sed -i "s|</body>|${SPLASH_HTML}</body>|g" www/index.html || true
-          fi
 
       - name: Create Capacitor Config Safely
         run: |
@@ -82,7 +75,7 @@ jobs:
           }
           EOF
 
-      - name: Setup App Icon and Full-Screen Native Splash Screen
+      - name: Setup App Icon
         run: |
           # Setup App Icon (s.png)
           if [ -f s.png ]; then
@@ -92,33 +85,6 @@ jobs:
               cp -f s.png "${dir}ic_launcher.png" 2>/dev/null || true
               cp -f s.png "${dir}ic_launcher_round.png" 2>/dev/null || true
             done
-          fi
-
-          # Setup Full-Screen Splash Image (bo.png)
-          if [ -f bo.png ]; then
-            # Delete default Capacitor splash vector XML files
-            find android/app/src/main/res -name "splash.xml" -type f -delete
-
-            # Copy bo.png as splash.png into all drawable resource directories
-            mkdir -p android/app/src/main/res/drawable
-            cp -f bo.png android/app/src/main/res/drawable/splash.png
-            for dir in android/app/src/main/res/drawable*/; do
-              cp -f bo.png "${dir}splash.png" 2>/dev/null || true
-            done
-
-            # Update styles.xml to disable circular icon masking and force bo.png full-screen
-            STYLES_FILE="android/app/src/main/res/values/styles.xml"
-            if [ -f "$STYLES_FILE" ]; then
-              sed -i 's|<item name="windowSplashScreenAnimatedIcon">.*</item>|<item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>|g' "$STYLES_FILE" || true
-              sed -i 's|<item name="android:background">.*</item>|<item name="android:windowBackground">@drawable/splash</item>|g' "$STYLES_FILE" || true
-            fi
-
-            # Apply same rule to values-v31/styles.xml for Android 12+ compatibility
-            V31_STYLES="android/app/src/main/res/values-v31/styles.xml"
-            if [ -f "$V31_STYLES" ]; then
-              sed -i 's|<item name="windowSplashScreenAnimatedIcon">.*</item>|<item name="windowSplashScreenAnimatedIcon">@android:color/transparent</item>|g' "$V31_STYLES" || true
-              sed -i 's|<item name="android:windowSplashScreenAnimatedIcon">.*</item>|<item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>|g' "$V31_STYLES" || true
-            fi
           fi
 
       - name: Force App Size < 15MB & Fix Kotlin Clashes
