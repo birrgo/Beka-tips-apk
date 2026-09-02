@@ -29,7 +29,7 @@ jobs:
           mkdir www
           rsync -av --exclude='.git' --exclude='.github' --exclude='www' ./ www/
 
-      - name: Create Capacitor Config with Splash Screen Settings
+      - name: Create Capacitor Config
         run: |
           cat <<EOF > capacitor.config.json
           {
@@ -55,7 +55,7 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Setup App Icon (s.png) & Loading Splash Screen (bo.png)
+      - name: Setup App Icon and Native XML Splash Screen
         run: |
           # 1. Set up App Icon
           if [ -f s.png ]; then
@@ -67,17 +67,24 @@ jobs:
             done
           fi
           
-          # 2. Set up Splash Screen
+          # 2. Build a Native XML Splash Screen to prevent the black screen
           if [ -f bo.png ]; then
-            # Delete Capacitor's default XML splash files to prevent black screen conflicts
-            find android/app/src/main/res -name "splash.xml" -type f -delete
-            find android/app/src/main/res -name "splash.png" -type f -delete
+            # Clean up default Capacitor splash files
+            find android/app/src/main/res -name "splash.*" -type f -delete
             
-            # Copy bo.png to all primary drawable directories
-            for dir in drawable drawable-port drawable-port-hdpi drawable-port-xhdpi drawable-port-xxhdpi drawable-port-xxxhdpi; do
-              mkdir -p "android/app/src/main/res/$dir"
-              cp -f bo.png "android/app/src/main/res/$dir/splash.png"
-            done
+            mkdir -p android/app/src/main/res/drawable
+            # Copy original image and rename it so the XML can reference it
+            cp -f bo.png android/app/src/main/res/drawable/splash_image.png
+            
+            # Generate a proper layer-list XML that Android expects for cold boots
+            cat <<EOF > android/app/src/main/res/drawable/splash.xml
+            <?xml version="1.0" encoding="utf-8"?>
+            <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+                <item>
+                    <bitmap android:gravity="fill" android:src="@drawable/splash_image" />
+                </item>
+            </layer-list>
+            EOF
           fi
 
       - name: Reduce APK Size & Fix Kotlin Duplicate Classes
@@ -102,7 +109,7 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Build Signed Debug APK (Installable)
+      - name: Build Signed Debug APK
         run: |
           cd android 
           chmod +x ./gradlew
