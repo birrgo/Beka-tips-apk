@@ -40,7 +40,7 @@ jobs:
             # 1. Delete the adaptive icon folder entirely
             rm -rf android/app/src/main/res/mipmap-anydpi-v26
             
-            # 2. Force delete any remaining XML icon definitions to prevent duplicate resources
+            # 2. Force delete any remaining XML icon definitions
             find android/app/src/main/res -name "ic_launcher*.xml" -type f -delete
             
             # 3. Copy the PNG to standard density folders
@@ -49,6 +49,20 @@ jobs:
               cp -f s.png "${dir}ic_launcher_round.png" 2>/dev/null || true
             done
           fi
+
+      - name: Fix Kotlin Duplicate Classes
+        run: |
+          # Append a resolution strategy to force a unified Kotlin version
+          cat <<EOF >> android/app/build.gradle
+          
+          configurations.all {
+              resolutionStrategy {
+                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+              }
+          }
+          EOF
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
