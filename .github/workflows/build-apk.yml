@@ -42,15 +42,17 @@ jobs:
                 "launchShowDuration": 3000,
                 "launchAutoHide": true,
                 "backgroundColor": "#ffffff",
-                "androidSplashResourceName": "splash"
+                "androidSplashResourceName": "splash",
+                "showSpinner": false
               }
             }
           }
           EOF
 
-      - name: Initialize Android Project
+      - name: Initialize & Sync Android Project
         run: |
           npx cap add android
+          npx cap sync android
 
       - name: Setup App Icon (s.png) & Loading Splash Screen (bo.png)
         run: |
@@ -65,15 +67,20 @@ jobs:
           
           if [ -f bo.png ]; then
             mkdir -p android/app/src/main/res/drawable
+            mkdir -p android/app/src/main/res/drawable-port
+            mkdir -p android/app/src/main/res/drawable-land
             cp -f bo.png android/app/src/main/res/drawable/splash.png
+            cp -f bo.png android/app/src/main/res/drawable-port/splash.png
+            cp -f bo.png android/app/src/main/res/drawable-land/splash.png
+            
+            # Delete dark mode styles so it doesn't force a black background
+            rm -rf android/app/src/main/res/values-night
           fi
 
       - name: Reduce APK Size & Fix Kotlin Duplicate Classes
         run: |
-          # 1. Filter out heavy emulator architectures to drastically reduce APK size
           sed -i '/defaultConfig {/a \        ndk {\n            abiFilters "arm64-v8a", "armeabi-v7a"\n        }' android/app/build.gradle
           
-          # 2. Force a unified Kotlin standard library version
           cat <<EOF >> android/app/build.gradle
           
           configurations.all {
