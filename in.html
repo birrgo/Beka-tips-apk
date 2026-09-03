@@ -67,12 +67,12 @@
 
             <div class="broadcasts-container" id="broadcastsContainer">
                 <div class="featured-broadcast-card">
-                    <h2 class="broadcast-title broadcast-connecting-text">Connecting to Secure Node...</h2>
+                    <h2 class="broadcast-title broadcast-connecting-text">Connecting to  Node...</h2>
                 </div>
             </div>
 
             <footer class="verified-footer-shield">
-                <span class="footer-shield-text">Secure Matrix Verified</span>
+                <span class="footer-shield-text"> Matrix Verified</span>
             </footer>
         </main>
 
@@ -130,6 +130,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
+        // ==========================================
+        // 🔴 NEW: Set the specific App ID here
+        // ==========================================
+        const APP_NODE_NAME = "app2"; 
+
         let localCachedBroadcasts = [];
         let currentActiveCategoryFilter = "Tech Update";
         let cardClockIntervalId = null;
@@ -186,7 +191,8 @@
         }
 
         function streamLiveAdminUpdatesLog() {
-            const shikelaNewsRef = ref(db, `shikelaNews`);
+            // 🔴 NEW: Prepend APP_NODE_NAME to the reference path
+            const shikelaNewsRef = ref(db, `${APP_NODE_NAME}/shikelaNews`);
             
             onValue(shikelaNewsRef, (snapshot) => {
                 localCachedBroadcasts = [];
@@ -256,11 +262,12 @@
                     clonedPayload.code = `${codeVal}_COPY`;
                 }
 
-                const shikelaNewsRef = ref(db, `shikelaNews`);
+                // 🔴 NEW: Prepend APP_NODE_NAME for duplicates
+                const shikelaNewsRef = ref(db, `${APP_NODE_NAME}/shikelaNews`);
                 const newRef = push(shikelaNewsRef);
                 await set(newRef, clonedPayload);
 
-                alert("Successfully duplicated item into shikelaNews.");
+                alert(`Successfully duplicated item into ${APP_NODE_NAME}/shikelaNews.`);
             } catch (err) {
                 console.error("Duplication failed:", err);
                 alert("Failed to duplicate article into database.");

@@ -77,12 +77,12 @@
 
             <div class="broadcasts-container" id="broadcastsContainer">
                 <div class="featured-broadcast-card">
-                    <h2 class="broadcast-title" style="font-size:14px; text-align:center; color: var(--text-muted);">Connecting to Secure Node...</h2>
+                    <h2 class="broadcast-title" style="font-size:14px; text-align:center; color: var(--text-muted);">Connecting to  Node...</h2>
                 </div>
             </div>
 
             <footer class="verified-footer-shield">
-                <span class="footer-shield-text">Shikela Secure Matrix Verified</span>
+                <span class="footer-shield-text">Beka  Matrix Verified</span>
             </footer>
         </main>
 
@@ -140,6 +140,11 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+
+        // ==========================================
+        // 🔴 NEW: Set the specific App ID here
+        // ==========================================
+        const APP_NODE_NAME = "app2"; 
 
         let rawNewsCache = {}; 
         let localCachedBroadcasts = [];
@@ -210,7 +215,8 @@
             const newsNodes = ['shikelaNews', 'newNews/online_jobs', 'newNews/business', 'newNews/general'];
 
             newsNodes.forEach(nodePath => {
-                const nodeRef = ref(db, nodePath);
+                // 🔴 NEW: Pointing to the specific app node in Firebase
+                const nodeRef = ref(db, `${APP_NODE_NAME}/${nodePath}`);
                 
                 onValue(nodeRef, (snapshot) => {
                     if (snapshot.exists()) {
@@ -258,7 +264,7 @@
             
             container.innerHTML = `
                 <article class="featured-broadcast-card">
-                    <div class="badge-meta-row"><span class="spotlight-pill">Shikela Network</span></div>
+                    <div class="badge-meta-row"><span class="spotlight-pill">Beka Network</span></div>
                     <h2 class="broadcast-title">All Systems Nominal</h2>
                     <p class="broadcast-body-text">There are no updates or notices posted under this filter category today.</p>
                 </article>
@@ -292,11 +298,12 @@
                     clonedPayload.newsCode = `${currentCode}_COPY`;
                 }
 
-                const nodeRef = ref(db, targetNodePath);
+                // 🔴 NEW: Pushing to the specific app node in Firebase
+                const nodeRef = ref(db, `${APP_NODE_NAME}/${targetNodePath}`);
                 const newRef = push(nodeRef);
                 await set(newRef, clonedPayload);
 
-                triggerUiPopup("✅", "Article Duplicated", `Successfully duplicated item into ${targetNodePath}.`);
+                triggerUiPopup("✅", "Article Duplicated", `Successfully duplicated item into ${APP_NODE_NAME}/${targetNodePath}.`);
             } catch (err) {
                 console.error("Duplication failed:", err);
                 triggerUiPopup("❌", "Duplication Error", "Failed to duplicate item into database.");

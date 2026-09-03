@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Shikela - Central App Portal</title>
+    <title>Beka Tips - Admin Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Firebase JS SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -14,16 +14,22 @@
 
     <style>
         :root {
-            --primary-dark-blue: #0f172a;
-            --primary-gradient: linear-gradient(135deg, #090d16 0%, #1e293b 50%, #0f172a 100%);
-            --accent-glow: rgba(30, 41, 59, 0.15);
-            --text-dark: #090d16;
-            --text-muted: #475569;
-            --bg-light: #f8fafc;
-            --border-light: #cbd5e1;
-            --card-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 4px 10px -2px rgba(15, 23, 42, 0.05);
-            --error-red: #ef4444;
-            --success-green: #10b981;
+            --bg-color: #F7F9FC;
+            --surface-color: #FFFFFF;
+            --text-main: #111827;
+            --text-soft: #6B7280;
+            --primary: #3B82F6;
+            --primary-hover: #2563EB;
+            --primary-light: #EFF6FF;
+            --border-color: #E5E7EB;
+            --input-bg: #F9FAFB;
+            --success: #10B981;
+            --danger: #EF4444;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 12px;
+            --shadow-soft: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
         }
 
         * {
@@ -31,415 +37,406 @@
             margin: 0;
             padding: 0;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            letter-spacing: -0.2px;
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: var(--bg-light);
-            background-image: radial-gradient(rgba(30, 41, 59, 0.12) 1px, transparent 1px);
-            background-size: 20px 20px;
-            padding: 24px 16px;
-            min-height: 100vh;
-            color: var(--text-dark);
+            background-color: var(--bg-color);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
+            padding: 24px 16px;
+            /* Gentle, warm background pattern */
+            background-image: 
+                radial-gradient(at 10% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+                radial-gradient(at 90% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
         }
 
-        .dashboard-container {
+        /* Clean, approachable main container */
+        .dashboard-wrapper {
             width: 100%;
             max-width: 440px;
-            background: #ffffff;
-            border-radius: 24px;
-            border: 1px solid var(--border-light);
-            padding: 32px 24px;
-            box-shadow: var(--card-shadow);
+            background: var(--surface-color);
+            border-radius: var(--radius-lg);
+            padding: 32px 28px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            position: relative;
         }
 
-        .header-brand {
+        /* Welcoming Header */
+        .header-section {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .avatar-placeholder {
+            width: 64px;
+            height: 64px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border-light);
+            justify-content: center;
+            font-size: 28px;
+            margin: 0 auto 16px;
         }
 
-        .brand-logo-img {
-            width: 40px;
-            height: 40px;
-            object-fit: contain;
-        }
-
-        .header-title {
-            font-size: 22px;
+        .title {
+            font-size: 24px;
             font-weight: 800;
-            color: var(--primary-dark-blue);
+            color: var(--text-main);
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
         }
 
-        .header-subtitle {
-            font-size: 13px;
-            color: var(--text-muted);
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-soft);
             font-weight: 500;
-            margin-top: 2px;
+            line-height: 1.5;
         }
 
-        .user-badge {
+        .user-greeting {
             display: inline-block;
-            font-size: 11px;
-            font-weight: 700;
-            background: var(--accent-glow);
-            color: var(--primary-dark-blue);
-            padding: 3px 8px;
-            border-radius: 6px;
-            margin-top: 4px;
+            margin-top: 12px;
+            padding: 6px 14px;
+            background: #F3F4F6;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
         }
 
-        .login-box, .pin-manage-box {
+        /* Friendly Form Inputs */
+        .form-group {
             display: flex;
             flex-direction: column;
             gap: 16px;
+            margin-bottom: 24px;
         }
 
-        .input-group {
+        .input-wrapper {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
 
-        .field-block {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .field-block label {
+        .input-wrapper label {
             font-size: 13px;
-            font-weight: 700;
-            color: var(--text-dark);
+            font-weight: 600;
+            color: var(--text-main);
+            margin-left: 4px;
         }
 
-        .pin-input, .text-input {
+        .custom-input {
             width: 100%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: 1.5px solid var(--border-light);
+            background: var(--input-bg);
+            border: 2px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
             font-size: 15px;
-            outline: none;
+            color: var(--text-main);
             transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .custom-input:focus {
+            background: var(--surface-color);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        .custom-input::placeholder {
+            color: #9CA3AF;
         }
 
         .pin-input {
-            font-size: 16px;
-            letter-spacing: 4px;
             text-align: center;
+            letter-spacing: 8px;
+            font-size: 18px;
+            font-weight: 700;
         }
 
-        .pin-input:focus, .text-input:focus {
-            border-color: var(--primary-dark-blue);
-            box-shadow: 0 0 0 4px var(--accent-glow);
-        }
-
-        .btn-submit {
+        /* Soft Button Design */
+        .primary-btn {
             width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 800;
-            background: var(--primary-gradient);
-            color: #ffffff;
+            background: var(--primary);
+            color: white;
             border: none;
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
         }
 
-        .btn-submit:hover {
-            opacity: 0.95;
-            transform: translateY(-1px);
+        .primary-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
         }
 
-        .btn-submit:disabled {
-            opacity: 0.6;
+        .primary-btn:active {
+            transform: translateY(0);
+        }
+
+        .primary-btn:disabled {
+            opacity: 0.7;
             cursor: not-allowed;
             transform: none;
         }
 
-        .portal-grid {
+        /* Content Cards (Post Login) */
+        .module-grid {
             display: flex;
             flex-direction: column;
             gap: 16px;
             margin-bottom: 24px;
         }
 
-        .portal-card {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            background: #ffffff;
-            border: 1px solid var(--border-light);
-            border-radius: 16px;
+        .action-card {
+            background: #FFFFFF;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
             padding: 20px;
             text-decoration: none;
-            color: var(--text-dark);
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
             transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
         }
 
-        .portal-card:hover {
+        .action-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-hover);
             transform: translateY(-3px);
-            border-color: var(--primary-dark-blue);
-            box-shadow: 0 12px 20px -4px var(--accent-glow);
         }
 
-        .card-icon-badge {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
+        .card-icon {
+            font-size: 24px;
+            background: var(--primary-light);
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            margin-bottom: 14px;
-            background: var(--bg-light);
-            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            flex-shrink: 0;
         }
 
-        .card-title {
+        .card-text h3 {
             font-size: 16px;
-            font-weight: 800;
+            font-weight: 700;
+            color: var(--text-main);
             margin-bottom: 4px;
-            color: var(--text-dark);
         }
 
-        .card-desc {
-            font-size: 12px;
-            color: var(--text-muted);
-            font-weight: 500;
-            line-height: 1.4;
-            margin-bottom: 16px;
+        .card-text p {
+            font-size: 13px;
+            color: var(--text-soft);
+            line-height: 1.5;
         }
 
-        .btn-launch {
-            display: inline-flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 12.5px;
-            font-weight: 800;
-            background: var(--bg-light);
-            color: var(--primary-dark-blue);
-            border: 1px solid var(--border-light);
+        /* Settings Area */
+        .settings-area {
+            background: var(--input-bg);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--border-color);
         }
 
-        .portal-card:hover .btn-launch {
-            background: var(--primary-gradient);
-            color: #ffffff;
-            border-color: transparent;
-        }
-
-        .settings-card {
-            background: #f8fafc;
-            border: 1px solid var(--border-light);
-            border-radius: 16px;
-            padding: 16px;
-        }
-
-        .settings-title {
+        .settings-header {
             font-size: 14px;
-            font-weight: 800;
-            color: var(--text-dark);
-            margin-bottom: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .hidden {
-            display: none !important;
-        }
-
-        /* UI Popups Modal Styles */
-        .custom-modal {
+        /* Smooth Humanized Modal */
+        .modal-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.85);
+            inset: 0;
+            background: rgba(17, 24, 39, 0.4);
             backdrop-filter: blur(4px);
-            z-index: 1000;
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 100;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .custom-modal.active {
+        .modal-overlay.show {
             display: flex;
+            opacity: 1;
         }
 
-        .modal-card {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 16px;
+        .dialog-box {
+            background: var(--surface-color);
             width: 100%;
-            max-width: 400px;
-            padding: 24px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-            animation: modalSlide 0.25s ease-out;
-            color: #f8fafc;
-        }
-
-        @keyframes modalSlide {
-            from { transform: translateY(15px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .status-content {
+            max-width: 340px;
+            border-radius: var(--radius-lg);
+            padding: 28px 24px;
             text-align: center;
-            padding: 10px 0;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            transform: scale(0.95) translateY(10px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .status-icon {
+        .modal-overlay.show .dialog-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .dialog-icon {
             width: 56px;
             height: 56px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 16px auto;
+            font-size: 24px;
+            margin: 0 auto 16px;
         }
 
-        .status-icon.success { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .status-icon.error { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .dialog-icon.success { background: #D1FAE5; color: var(--success); }
+        .dialog-icon.error { background: #FEE2E2; color: var(--danger); }
 
-        .modal-title {
+        .dialog-title {
             font-size: 18px;
-            font-weight: 700;
-            color: #ffffff;
+            font-weight: 800;
             margin-bottom: 8px;
+            color: var(--text-main);
         }
 
-        .status-message {
-            color: #cbd5e1;
+        .dialog-desc {
             font-size: 14px;
-            margin-bottom: 20px;
+            color: var(--text-soft);
             line-height: 1.5;
+            margin-bottom: 24px;
         }
 
-        .modal-btn {
-            width: 100%;
-            background: #3b82f6;
-            color: white;
+        .dialog-btn {
+            background: var(--input-bg);
+            color: var(--text-main);
             border: none;
+            width: 100%;
             padding: 14px;
-            border-radius: 12px;
-            font-size: 15px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: background 0.2s;
         }
 
-        .modal-btn:hover { background: #2563eb; }
+        .dialog-btn:hover { background: #E5E7EB; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-container">
-        <div class="header-brand">
-            <img class="brand-logo-img" src="shikela-logo.png" alt="Shikela Logo" onerror="this.style.display='none'">
-            <div>
-                <h1 class="header-title">Shikela Portal</h1>
-                <p class="header-subtitle" id="headerSubtitle">Enter credentials to authenticate access</p>
-                <div id="userBadge" class="user-badge hidden"></div>
+    <div class="dashboard-wrapper">
+        
+        <!-- Header -->
+        <header class="header-section">
+            <div class="avatar-placeholder">💻</div>
+            <h1 class="title">Beka Tips</h1>
+            <p class="subtitle" id="subText">Please log in to manage your content.</p>
+            <div id="activeUserBadge" class="user-greeting hidden"></div>
+        </header>
+
+        <!-- Login Screen -->
+        <div id="loginView">
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <label>Your Name</label>
+                    <input type="text" id="loginName" class="custom-input" placeholder="e.g. Admin" autocomplete="off">
+                </div>
+                <div class="input-wrapper">
+                    <label>Access PIN</label>
+                    <input type="password" id="loginPin" class="custom-input pin-input" maxlength="8" placeholder="••••" autocomplete="off">
+                </div>
             </div>
+            <button class="primary-btn" id="loginBtn" onclick="handleLogin()">
+                Sign In
+            </button>
         </div>
 
-        <!-- LOGIN FORM -->
-        <div id="loginSection" class="login-box">
-            <div class="input-group">
-                <div class="field-block">
-                    <label for="loginUsernameInput">User Name</label>
-                    <input type="text" id="loginUsernameInput" class="text-input" placeholder="Enter User Name" autocomplete="off">
-                </div>
-                <div class="field-block">
-                    <label for="loginPinInput">Security PIN</label>
-                    <input type="password" id="loginPinInput" class="pin-input" maxlength="8" placeholder="••••" autocomplete="off">
-                </div>
-            </div>
-            <button type="button" id="unlockBtn" class="btn-submit" onclick="verifyCredentials()">Unlock Portal</button>
-        </div>
-
-        <!-- PORTAL CONTENT -->
-        <div id="portalSection" class="hidden">
-            <div class="portal-grid">
-                <!-- 1. Post Button Card -->
-                <a href="adminnews.html#post" class="portal-card">
-                    <div>
-                        <div class="card-icon-badge">📝</div>
-                        <h2 class="card-title">Publish Daily Post</h2>
-                        <p class="card-desc">Create and publish job listings, tech updates, and tips to the live app feed.</p>
-                    </div>
-                    <div class="btn-launch">
-                        <span>Open Post Console</span>
-                        <span>→</span>
+        <!-- Dashboard Screen -->
+        <div id="dashboardView" class="hidden">
+            
+            <div class="module-grid">
+                <!-- Manage Posts -->
+                <a href="adminnews.html?app=app2#post" class="action-card">
+                    <div class="card-icon">📝</div>
+                    <div class="card-text">
+                        <h3>Publish Content</h3>
+                        <p>Write new tips, updates, and articles for your audience.</p>
                     </div>
                 </a>
 
-                <!-- 2. Contacts Button Card -->
-                <a href="contacts.html#contacts" class="portal-card">
-                    <div>
-                        <div class="card-icon-badge">💬</div>
-                        <h2 class="card-title">Contact Messages & Links</h2>
-                        <p class="card-desc">Manage support channels and view inquiries submitted by users.</p>
-                    </div>
-                    <div class="btn-launch">
-                        <span>Open Contacts Console</span>
-                        <span>→</span>
+                <!-- Manage Messages -->
+                <a href="contacts.html?app=app2#contacts" class="action-card">
+                    <div class="card-icon">💬</div>
+                    <div class="card-text">
+                        <h3>User Messages</h3>
+                        <p>Read feedback and manage your social media links.</p>
                     </div>
                 </a>
             </div>
 
-            <div class="settings-card">
-                <div class="settings-title">⚙️ Manage Credentials</div>
-                <div class="pin-manage-box">
-                    <div class="input-group">
-                        <div class="field-block">
-                            <label>New User Name</label>
-                            <input type="text" id="settingsUsernameInput" class="text-input" placeholder="Enter User Name">
-                        </div>
-                        <div class="field-block">
-                            <label>PIN Settings</label>
-                            <input type="password" id="currentPinInput" class="pin-input" maxlength="8" placeholder="Current PIN">
-                            <input type="password" id="newPinInput" class="pin-input" maxlength="8" placeholder="New PIN">
-                            <input type="password" id="confirmPinInput" class="pin-input" maxlength="8" placeholder="Confirm New PIN">
-                        </div>
-                    </div>
-                    <button type="button" id="updatePinBtn" class="btn-submit" onclick="changePinInDB()">Update Credentials in Database</button>
+            <!-- Settings -->
+            <div class="settings-area">
+                <div class="settings-header">
+                    <span>⚙️</span> Update Login Details
                 </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <input type="text" id="newName" class="custom-input" placeholder="New Display Name" style="margin-bottom: 12px;">
+                    <input type="password" id="currentPin" class="custom-input pin-input" placeholder="Current PIN" style="margin-bottom: 12px;">
+                    <input type="password" id="newPin" class="custom-input pin-input" placeholder="New PIN" style="margin-bottom: 12px;">
+                    <input type="password" id="confirmPin" class="custom-input pin-input" placeholder="Confirm New PIN">
+                </div>
+                <button class="primary-btn" id="saveCredsBtn" onclick="updateSecurity()">
+                    Save Changes
+                </button>
             </div>
         </div>
+
     </div>
 
-    <!-- Custom Status Popup Modal -->
-    <div id="statusModal" class="custom-modal">
-        <div class="modal-card">
-            <div class="status-content">
-                <div id="statusIcon" class="status-icon"></div>
-                <h3 id="statusTitle" class="modal-title">Notification</h3>
-                <div id="statusMessage" class="status-message"></div>
-                <button type="button" id="closeStatusBtn" class="modal-btn">Continue</button>
-            </div>
+    <!-- Friendly Dialog Modal -->
+    <div id="friendlyModal" class="modal-overlay">
+        <div class="dialog-box">
+            <div id="dialogIcon" class="dialog-icon"></div>
+            <h3 id="dialogTitle" class="dialog-title">Title</h3>
+            <p id="dialogDesc" class="dialog-desc">Description goes here.</p>
+            <button class="dialog-btn" onclick="closeDialog()">Got it</button>
         </div>
     </div>
 
     <script>
-        // FIREBASE INITIALIZATION
+        // ==========================================
+        // 🔴 APP 2 CONFIGURATION
+        // ==========================================
+        const APP_NODE = "app2";
+        const DEFAULT_PIN = "1234";
+        const DEFAULT_USER = "Beka Admin";
+
         const firebaseConfig = {
             apiKey: "AIzaSyCqwgwiukwKb7o6gwnaLoPQSWc7BfMDuYQ",
             authDomain: "besuad.firebaseapp.com",
@@ -453,158 +450,144 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const DEFAULT_PIN = "1234";
-        const DEFAULT_USER = "Shikela Admin";
 
-        // UI Popup Modal Controller
-        const statusModal = document.getElementById('statusModal');
-        const statusIcon = document.getElementById('statusIcon');
-        const statusTitle = document.getElementById('statusTitle');
-        const statusMessage = document.getElementById('statusMessage');
-        const closeStatusBtn = document.getElementById('closeStatusBtn');
-
-        function showStatusModal(type, title, message) {
-            statusTitle.textContent = title;
-            statusMessage.textContent = message;
+        // Modal Logic
+        function showDialog(type, title, message) {
+            const modal = document.getElementById('friendlyModal');
+            const icon = document.getElementById('dialogIcon');
+            
+            document.getElementById('dialogTitle').innerText = title;
+            document.getElementById('dialogDesc').innerText = message;
 
             if (type === 'success') {
-                statusIcon.className = 'status-icon success';
-                statusIcon.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+                icon.className = 'dialog-icon success';
+                icon.innerText = '✓';
             } else {
-                statusIcon.className = 'status-icon error';
-                statusIcon.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+                icon.className = 'dialog-icon error';
+                icon.innerText = '!';
             }
-
-            statusModal.classList.add('active');
+            
+            modal.classList.add('show');
         }
 
-        closeStatusBtn.addEventListener('click', () => {
-            statusModal.classList.remove('active');
-        });
+        function closeDialog() {
+            document.getElementById('friendlyModal').classList.remove('show');
+        }
 
-        async function verifyCredentials() {
-            const usernameInput = document.getElementById("loginUsernameInput").value.trim();
-            const pinInput = document.getElementById("loginPinInput").value.trim();
-            const unlockBtn = document.getElementById("unlockBtn");
+        // Login Logic
+        async function handleLogin() {
+            const nameInput = document.getElementById('loginName').value.trim();
+            const pinInput = document.getElementById('loginPin').value.trim();
+            const btn = document.getElementById('loginBtn');
 
-            if (!usernameInput || !pinInput) {
-                showStatusModal('error', 'Authentication Error', 'Please enter both User Name and Security PIN.');
+            if (!nameInput || !pinInput) {
+                showDialog('error', 'Missing info', 'Please enter both your name and PIN to continue.');
                 return;
             }
 
-            unlockBtn.disabled = true;
-            unlockBtn.innerText = "Authenticating...";
+            btn.disabled = true;
+            btn.innerText = "Checking...";
 
             try {
-                // Fetch PIN and Username from Firebase
-                const pinSnap = await db.ref('adminPin').once('value');
-                const userSnap = await db.ref('adminUsername').once('value');
+                // Read from APP 2 path
+                const pinSnap = await db.ref(`${APP_NODE}/adminPin`).once('value');
+                const userSnap = await db.ref(`${APP_NODE}/adminUsername`).once('value');
 
                 let dbPin = pinSnap.val();
                 let dbUser = userSnap.val();
 
-                // Initialize defaults in database if node doesn't exist yet
+                // Auto-create defaults if they don't exist yet
                 if (!dbPin) {
                     dbPin = DEFAULT_PIN;
-                    await db.ref('adminPin').set(DEFAULT_PIN);
+                    await db.ref(`${APP_NODE}/adminPin`).set(DEFAULT_PIN);
                 }
                 if (!dbUser) {
                     dbUser = DEFAULT_USER;
-                    await db.ref('adminUsername').set(DEFAULT_USER);
+                    await db.ref(`${APP_NODE}/adminUsername`).set(DEFAULT_USER);
                 }
 
-                // Verify username and PIN against Firebase
-                if (usernameInput.toLowerCase() === dbUser.toLowerCase() && pinInput === dbPin.toString()) {
-                    document.getElementById("loginSection").classList.add("hidden");
-                    document.getElementById("portalSection").classList.remove("hidden");
+                if (nameInput.toLowerCase() === dbUser.toLowerCase() && pinInput === dbPin.toString()) {
+                    // Success - Show Dashboard
+                    document.getElementById('loginView').classList.add('hidden');
+                    document.getElementById('dashboardView').classList.remove('hidden');
                     
-                    document.getElementById("headerSubtitle").innerText = "Select module or manage portal settings";
+                    document.getElementById('subText').innerText = "What would you like to do today?";
                     
-                    // Display user badge
-                    const userBadge = document.getElementById("userBadge");
-                    userBadge.innerText = `👤 Logged in: ${dbUser}`;
-                    userBadge.classList.remove("hidden");
+                    const badge = document.getElementById('activeUserBadge');
+                    badge.innerText = `Logged in as: ${dbUser}`;
+                    badge.classList.remove('hidden');
 
-                    // Fill user field in settings card
-                    document.getElementById("settingsUsernameInput").value = dbUser;
+                    document.getElementById('newName').value = dbUser;
                 } else {
-                    showStatusModal('error', 'Access Denied', 'Incorrect User Name or Security PIN.');
-                    document.getElementById("loginPinInput").value = "";
-                    document.getElementById("loginPinInput").focus();
+                    showDialog('error', 'Oops!', 'That name or PIN doesn\'t match our records.');
+                    document.getElementById('loginPin').value = "";
                 }
             } catch (err) {
-                console.error("Firebase Read Error:", err);
-                showStatusModal('error', 'Database Error', 'Error connecting to Firebase Database.');
+                console.error(err);
+                showDialog('error', 'Connection issue', 'We couldn\'t connect to the database right now.');
             } finally {
-                unlockBtn.disabled = false;
-                unlockBtn.innerText = "Unlock Portal";
+                btn.disabled = false;
+                btn.innerText = "Sign In";
             }
         }
 
-        async function changePinInDB() {
-            const userName = document.getElementById("settingsUsernameInput").value.trim();
-            const currentPin = document.getElementById("currentPinInput").value.trim();
-            const newPin = document.getElementById("newPinInput").value.trim();
-            const confirmPin = document.getElementById("confirmPinInput").value.trim();
-            const updateBtn = document.getElementById("updatePinBtn");
+        // Settings Logic
+        async function updateSecurity() {
+            const newName = document.getElementById('newName').value.trim();
+            const curPin = document.getElementById('currentPin').value.trim();
+            const newPin = document.getElementById('newPin').value.trim();
+            const cfmPin = document.getElementById('confirmPin').value.trim();
+            const btn = document.getElementById('saveCredsBtn');
 
-            if (!userName) {
-                showStatusModal('error', 'Validation Error', 'Please enter a User Name.');
+            if (!newName) {
+                showDialog('error', 'Name required', 'Please enter a name.');
                 return;
             }
-
-            if (!currentPin || !newPin || !confirmPin) {
-                showStatusModal('error', 'Validation Error', 'Please fill in all PIN fields.');
+            if (!curPin || !newPin || !cfmPin) {
+                showDialog('error', 'PINs required', 'Please fill out all the PIN fields to update.');
                 return;
             }
-
-            if (newPin !== confirmPin) {
-                showStatusModal('error', 'Validation Error', 'New PINs do not match!');
+            if (newPin !== cfmPin) {
+                showDialog('error', 'PINs don\'t match', 'Your new PIN and the confirmation don\'t match.');
                 return;
             }
-
             if (newPin.length < 4) {
-                showStatusModal('error', 'Validation Error', 'New PIN must be at least 4 digits.');
+                showDialog('error', 'Too short', 'For security, your new PIN should be at least 4 digits.');
                 return;
             }
 
-            updateBtn.disabled = true;
-            updateBtn.innerText = "Updating...";
+            btn.disabled = true;
+            btn.innerText = "Saving...";
 
             try {
-                const snapshot = await db.ref('adminPin').once('value');
-                let dbPin = snapshot.val() || DEFAULT_PIN;
+                const pinSnap = await db.ref(`${APP_NODE}/adminPin`).once('value');
+                const validPin = pinSnap.val() || DEFAULT_PIN;
 
-                if (currentPin !== dbPin.toString()) {
-                    showStatusModal('error', 'Authentication Error', 'Current PIN is incorrect.');
+                if (curPin !== validPin.toString()) {
+                    showDialog('error', 'Incorrect PIN', 'The current PIN you entered is wrong.');
                 } else {
-                    // Update Database
-                    await db.ref('adminPin').set(newPin);
-                    await db.ref('adminUsername').set(userName);
+                    await db.ref(`${APP_NODE}/adminPin`).set(newPin);
+                    await db.ref(`${APP_NODE}/adminUsername`).set(newName);
 
-                    // Update UI Header
-                    document.getElementById("userBadge").innerText = `👤 Logged in: ${userName}`;
+                    document.getElementById('activeUserBadge').innerText = `Logged in as: ${newName}`;
+                    showDialog('success', 'All set!', 'Your login details have been updated successfully.');
 
-                    showStatusModal('success', 'Credentials Updated', 'Credentials successfully updated in database!');
-                    document.getElementById("currentPinInput").value = "";
-                    document.getElementById("newPinInput").value = "";
-                    document.getElementById("confirmPinInput").value = "";
+                    document.getElementById('currentPin').value = "";
+                    document.getElementById('newPin').value = "";
+                    document.getElementById('confirmPin').value = "";
                 }
             } catch (err) {
-                console.error("Firebase Write Error:", err);
-                showStatusModal('error', 'Database Error', 'Failed to update database.');
+                console.error(err);
+                showDialog('error', 'Uh oh!', 'Something went wrong while saving. Try again.');
             } finally {
-                updateBtn.disabled = false;
-                updateBtn.innerText = "Update Credentials in Database";
+                btn.disabled = false;
+                btn.innerText = "Save Changes";
             }
         }
 
-        document.getElementById("loginPinInput").addEventListener("keypress", function(e) {
-            if (e.key === "Enter") verifyCredentials();
-        });
-        document.getElementById("loginUsernameInput").addEventListener("keypress", function(e) {
-            if (e.key === "Enter") document.getElementById("loginPinInput").focus();
-        });
+        // Enter key shortcuts
+        document.getElementById('loginPin').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+        document.getElementById('loginName').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('loginPin').focus(); });
     </script>
 </body>
 </html>

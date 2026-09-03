@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Shikela - Admin News Manager</title>
+    <title>App 2 - Admin News Manager</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -351,16 +351,6 @@
             border: 1px solid var(--border-light);
             display: inline-block;
         }
-
-        .node-tag {
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-        }
-        .node-tag-shikela { background: #e0e7ff; color: #3730a3; }
-        .node-tag-legacy { background: #e2e8f0; color: #475569; }
     </style>
 </head>
 <body>
@@ -398,7 +388,7 @@
         <div class="header-brand-row">
             <div class="brand-title-group">
                 <img class="brand-logo-img" src="shikela-logo.png" alt="Shikela Logo" onerror="this.style.display='none'">
-                <h3 class="section-title">Shikela News Manager & Editor</h3>
+                <h3 class="section-title">App 2 - News Manager & Editor</h3>
             </div>
         </div>
 
@@ -411,8 +401,8 @@
         <div class="input-field-wrapper">
             <label>Target Category</label>
             <select class="form-select" id="postCategory">
-                <option value="Shikela Update">1. Shikela Update</option>
-                <option value="Shikela Tips">2. Shikela Tips</option>
+                <option value="Shikela Update">1. Beka Update</option>
+                <option value="Shikela Tips">2. Beka Tips</option>
                 <option value="Tech Update">3. Tech Update</option>
                 <option value="Tech Tips">4. Tech Tips</option>
                 <option value="Online Update">5. Online Update</option>
@@ -483,9 +473,8 @@
             
             <!-- 8 CATEGORY FILTER BUTTONS -->
             <div class="filter-btn-grid">
-            
-                <button class="filter-btn" data-filter="Shikela Update">Shikela Update</button>
-                <button class="filter-btn" data-filter="Shikela Tips">Shikela Tips</button>
+                <button class="filter-btn" data-filter="Shikela Update">Beka Update</button>
+                <button class="filter-btn" data-filter="Shikela Tips"> Tips</button>
                 <button class="filter-btn" data-filter="Tech Update">Tech Update</button>
                 <button class="filter-btn" data-filter="Tech Tips">Tech Tips</button>
                 <button class="filter-btn" data-filter="Online Update">Online Update</button>
@@ -501,6 +490,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getDatabase, ref, onValue, push, set, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        // ==========================================
+        // 🔴 APP ISOLATION CONFIGURATION
+        // ==========================================
+        const APP_NODE_NAME = "app2";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCqwgwiukwKb7o6gwnaLoPQSWc7BfMDuYQ",
@@ -596,12 +590,13 @@
             setTimeout(() => t.style.display='none', 3500);
         }
 
-        onValue(ref(db, 'shikelaNews'), snapshot => { 
+        // 🔴 UPDATED: App 2 Specific Listeners
+        onValue(ref(db, `${APP_NODE_NAME}/shikelaNews`), snapshot => { 
             shikelaNewsState = snapshot.val() || {}; 
             render(); 
-        }, error => console.error("Database 'shikelaNews' Connection Error:", error));
+        }, error => console.error("Database Connection Error:", error));
 
-        onValue(ref(db, 'newNews'), snapshot => { 
+        onValue(ref(db, `${APP_NODE_NAME}/newNews`), snapshot => { 
             legacyNewsState = snapshot.val() || {}; 
             render(); 
         }, error => console.warn("Legacy Node Error:", error));
@@ -629,7 +624,6 @@
                 const k = itemObj.key;
                 const nodeName = itemObj.node;
                 const newsCode = item.newsCode || item.code || 'S-NONE';
-                const tagClass = nodeName === 'shikelaNews' ? 'node-tag-shikela' : 'node-tag-legacy';
                 const itemCategory = item.category || 'Shikela Update';
 
                 let isMatch = false;
@@ -645,9 +639,7 @@
                                     <span class="code-badge">${newsCode}</span>
                                     <strong style="margin-left:6px; font-size:14px; color:var(--text-dark);">${item.title || item.newsTitle || 'Untitled'}</strong>
                                 </div>
-                                <span class="node-tag ${tagClass}">${nodeName}</span>
                             </div>
-                            <div style="font-size:12px; color:var(--text-muted);">Category: <strong>${itemCategory}</strong></div>
                             <div class="manage-btn-group">
                                 <button class="btn-news-ctrl btn-ctrl-edit edit-btn" data-key="${k}" data-node="${nodeName}">Edit News</button>
                                 <button class="btn-news-ctrl btn-ctrl-preview preview-btn" data-key="${k}" data-node="${nodeName}">Preview News</button>
@@ -665,7 +657,7 @@
             container.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', async () => {
                 const k = btn.getAttribute('data-key');
                 const nodeName = btn.getAttribute('data-node');
-                const path = `${nodeName}/${k}`;
+                const path = `${APP_NODE_NAME}/${nodeName}/${k}`;
 
                 if(!await openModal("Confirm Deletion", `Permanently remove entry from '${path}'?`, [{label:"Target:", value:path}], "btn-delete", "Delete Now")) return;
                 try {
@@ -707,7 +699,7 @@
                 updateImagePreview();
 
                 document.getElementById('editingBanner').style.display = 'flex';
-                document.getElementById('editingNewsCode').innerText = `${item.newsCode || item.code || k} [${nodeName}]`;
+                document.getElementById('editingNewsCode').innerText = `${item.newsCode || item.code || k}`;
                 document.getElementById('buttonText').innerText = "Update Existing Post";
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }));
@@ -849,12 +841,12 @@
 
             try {
                 if (currentEditingKey) {
-                    await update(ref(db, `${currentEditingNode}/${currentEditingKey}`), newsDataPayload);
-                    triggerAdminAlert(`Updated [${newsCode}] in ${currentEditingNode}!`);
+                    await update(ref(db, `${APP_NODE_NAME}/${currentEditingNode}/${currentEditingKey}`), newsDataPayload);
+                    triggerAdminAlert(`Updated [${newsCode}] successfully!`);
                 } else {
                     newsDataPayload.createdAtTimestamp = nowEpoch;
-                    await set(push(ref(db, 'shikelaNews')), newsDataPayload);
-                    triggerAdminAlert(`Published to shikelaNews! Code: [${newsCode}]`);
+                    await set(push(ref(db, `${APP_NODE_NAME}/shikelaNews`)), newsDataPayload);
+                    triggerAdminAlert(`Published! Code: [${newsCode}]`);
                 }
 
                 resetFormState();
@@ -869,10 +861,10 @@
 
         // Purge Action
         document.getElementById('deleteAllCategoriesBtn').addEventListener('click', async () => {
-            if(!await openModal("CRITICAL PURGE", "Permanently delete ALL news entries across database?", [{label:"Target Nodes:", value:"shikelaNews, newNews"}], "btn-delete", "Delete Everything")) return;
+            if(!await openModal("CRITICAL PURGE", "Permanently delete ALL news entries across database?", [{label:"Target Nodes:", value:`${APP_NODE_NAME}/shikelaNews, ${APP_NODE_NAME}/newNews`}], "btn-delete", "Delete Everything")) return;
             try {
-                await remove(ref(db, 'shikelaNews')); 
-                await remove(ref(db, 'newNews')); 
+                await remove(ref(db, `${APP_NODE_NAME}/shikelaNews`)); 
+                await remove(ref(db, `${APP_NODE_NAME}/newNews`)); 
                 resetFormState();
                 triggerAdminAlert("Flushed all news items!");
             } catch(e) {

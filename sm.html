@@ -76,12 +76,12 @@
 
             <div class="broadcasts-container" id="broadcastsContainer">
                 <div class="featured-broadcast-card">
-                    <h2 class="broadcast-title broadcast-connecting-text">Connecting to Sbikela Network...</h2>
+                    <h2 class="broadcast-title broadcast-connecting-text">Connecting to  Network...</h2>
                 </div>
             </div>
 
             <footer class="verified-footer-shield">
-                <span class="footer-shield-text">Sbikela Brand Verified</span>
+                <span class="footer-shield-text">Beka Brand Verified</span>
             </footer>
         </main>
 
@@ -139,6 +139,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
+        // ==========================================
+        // 🔴 NEW: Set the specific App ID here
+        // ==========================================
+        const APP_NODE_NAME = "app2"; 
+
         let localCachedBroadcasts = [];
         let currentActiveCategoryFilter = "Social Media";
         let cardClockIntervalId = null;
@@ -203,7 +208,8 @@
         }
 
         function streamLiveShikelaNewsLog() {
-            const shikelaNewsRef = ref(db, `shikelaNews`);
+            // 🔴 NEW: Prepend APP_NODE_NAME to the reference path
+            const shikelaNewsRef = ref(db, `${APP_NODE_NAME}/shikelaNews`);
             
             onValue(shikelaNewsRef, (snapshot) => {
                 localCachedBroadcasts = [];
@@ -241,7 +247,7 @@
             
             container.innerHTML = `
                 <article class="featured-broadcast-card">
-                    <div class="badge-meta-row"><span class="spotlight-pill">Sbikela</span></div>
+                    <div class="badge-meta-row"><span class="spotlight-pill">Social Update </span></div>
                     <h2 class="broadcast-title">No Updates Available</h2>
                     <p class="broadcast-body-text">There are currently no updates posted under this filter category today.</p>
                 </article>
@@ -274,11 +280,12 @@
                     clonedPayload[codeKey] = `${clonedPayload[codeKey]}_COPY`;
                 }
 
-                const shikelaNewsRef = ref(db, `shikelaNews`);
+                // 🔴 NEW: Prepend APP_NODE_NAME for duplicates
+                const shikelaNewsRef = ref(db, `${APP_NODE_NAME}/shikelaNews`);
                 const newRef = push(shikelaNewsRef);
                 await set(newRef, clonedPayload);
 
-                triggerUiPopup("✅", "Article Duplicated", "Successfully duplicated news item under shikelaNews.");
+                triggerUiPopup("✅", "Article Duplicated", `Successfully duplicated news item under ${APP_NODE_NAME}/shikelaNews.`);
             } catch (err) {
                 console.error("Duplication failed:", err);
                 triggerUiPopup("❌", "Duplication Error", "Failed to duplicate article into database.");

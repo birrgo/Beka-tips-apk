@@ -6,7 +6,7 @@
     <title>Shikela - Contact Support</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="news.css">
     <style>
         .page-content-card { 
@@ -223,7 +223,7 @@
             <div class="page-content-card">
                 <div class="contact-header">
                     <h2>We Are Here to Help</h2>
-                    <p>At Shikela, community is at the heart of everything we do. Whether you are an Ethiopian freelancer looking for guidance on a specific daily job vacancy, an entrepreneur wanting to share a profitable business tip, or a brand interested in advertising on our platform, our dedicated support team is ready to assist you.</p>
+                    <p>At Beka, community is at the heart of everything we do. Whether you are an Ethiopian freelancer looking for guidance on a specific daily job vacancy, an entrepreneur wanting to share a profitable business tip, or a brand interested in advertising on our platform, our dedicated support team is ready to assist you.</p>
                     <p>Because we handle a high volume of inquiries regarding digital work and tech updates, we have provided multiple channels for you to reach us. Choose the method that works best for you below.</p>
                 </div>
 
@@ -285,7 +285,7 @@
                 </form>
 
                 <div class="guidelines-box">
-                    <strong>Support Guidelines:</strong> Please note that Shikela acts as an aggregator for online job postings. We do not directly hire for the external vacancies listed on our site. Please do not send CVs or resumes through this contact form, as they will not be forwarded to third-party employers.
+                    <strong>Support Guidelines:</strong> Please note that Beka acts as an aggregator for online job postings. We do not directly hire for the external vacancies listed on our site. Please do not send CVs or resumes through this contact form, as they will not be forwarded to third-party employers.
                 </div>
             </div>
         </main>
@@ -327,6 +327,11 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+        // ==========================================
+        // 🔴 APP 2 ISOLATION CONFIGURATION
+        // ==========================================
+        const APP_NODE = "app2";
+
         const firebaseConfig = {
             apiKey: "AIzaSyCqwgwiukwKb7o6gwnaLoPQSWc7BfMDuYQ",
             authDomain: "besuad.firebaseapp.com",
@@ -342,9 +347,9 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Fetch Social Links from Firebase
+        // Fetch Social Links from APP 2 node
         const dbRef = ref(database);
-        get(child(dbRef, 'social_links')).then((snapshot) => {
+        get(child(dbRef, `${APP_NODE}/social_links`)).then((snapshot) => {
             if (snapshot.exists()) {
                 const data = snapshot.val();
                 if (data.telegram) document.getElementById('telegramBtn').href = data.telegram;
@@ -414,7 +419,7 @@
             statusModal.classList.remove('active');
         });
 
-        // Submit Form Data
+        // Submit Form Data to APP 2 node
         const contactForm = document.getElementById('contactForm');
         const submitBtn = document.getElementById('submitBtn');
 
@@ -435,7 +440,8 @@
             const message = document.getElementById('message').value;
 
             try {
-                const messagesRef = ref(database, 'messages');
+                // Route message directly into app2 folder
+                const messagesRef = ref(database, `${APP_NODE}/messages`);
                 const newMessageRef = push(messagesRef);
                 
                 await set(newMessageRef, {
