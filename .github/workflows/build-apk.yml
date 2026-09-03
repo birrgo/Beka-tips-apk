@@ -1,4 +1,4 @@
-name: Convert PWA to APK
+name: Convert PWA to Release AAB
 
 on:
   push:
@@ -56,7 +56,6 @@ jobs:
 
       - name: Fix Android Hardware Back Button
         run: |
-          # Rewrite MainActivity.java so back button navigates back to previous pages instead of closing app
           mkdir -p android/app/src/main/java/com/bekatips/app
           cat << 'EOF' > android/app/src/main/java/com/bekatips/app/MainActivity.java
           package com.bekatips.app;
@@ -77,7 +76,6 @@ jobs:
 
       - name: Setup App Icon
         run: |
-          # Setup App Icon (s.png)
           if [ -f s.png ]; then
             rm -rf android/app/src/main/res/mipmap-anydpi-v26
             find android/app/src/main/res -name "ic_launcher*.xml" -type f -delete
@@ -87,9 +85,8 @@ jobs:
             done
           fi
 
-      - name: Force App Size < 15MB & Fix Kotlin Clashes
+      - name: Fix Kotlin Clashes
         run: |
-          sed -i '/defaultConfig {/a \        ndk {\n            abiFilters "arm64-v8a"\n        }' android/app/build.gradle
           echo "" >> android/app/build.gradle
           echo "configurations.all {" >> android/app/build.gradle
           echo "    resolutionStrategy {" >> android/app/build.gradle
@@ -106,17 +103,48 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Build Signed Debug APK
+      - name: Decode Base64 Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.jks
+
+      - name: Configure Signing in Gradle
+        run: |
+          cat << 'EOF' >> android/app/build.gradle
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file('release.jks')
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                  }
+              }
+          }
+          EOF
+
+      - name: Build Signed Release AAB
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew bundleRelease
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Rename APK file
-        run: mv android/app/build/outputs/apk/debug/app-debug.apk beka-tips.apk
+      - name: Move & Rename AAB Output
+        run: mv android/app/build/outputs/bundle/release/app-release.aab beka-tips.aab
 
-      - name: Upload Beka Tips APK
+      - name: Upload Signed Release AAB Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: beka-tips-apk
-          path: beka-tips.apk
+          name: beka-tips-aab
+          path: beka-tips.aab
