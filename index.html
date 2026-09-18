@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Beka Tips | App Updates, Tech Tips & Digital Skills</title>
+    <title>Go Tip | App Updates, Tech Tips & Digital Skills</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- PREVENT SPLASH WHEN SWITCHING MENUS/PAGES -->
@@ -297,7 +297,7 @@
     <!-- FULL SCREEN SPLASH SCREEN OVERLAY -->
     <div id="appSplashOverlay">
         <div class="splash-image-container">
-            <img src="s1.png" alt="Loading Beka Tips..." onerror="this.style.display='none'">
+            <img src="s1.png" alt="Loading Go Tip..." onerror="this.style.display='none'">
         </div>
         <div class="splash-spinner"></div>
     </div>
@@ -378,7 +378,7 @@
             <div class="broadcasts-container" id="broadcastsContainer">
                 <!-- Posts will render here -->
             </div>
-            <footer class="verified-footer-shield" id="endOfListShield"><span class="footer-shield-text">Beka Tips Matrix Verified</span></footer>
+            <footer class="verified-footer-shield" id="endOfListShield"><span class="footer-shield-text">Go Tip Matrix Verified</span></footer>
         </main>
 
         <div class="ad-container-wrapper" id="adContainerWrapper" style="display:none;">
@@ -407,7 +407,7 @@
         const firebaseConfig = { apiKey: "AIzaSyCqwgwiukWKb7o6gwnaLoPQSWc7BfMDuYQ", authDomain: "besuad.firebaseapp.com", databaseURL: "https://besuad-default-rtdb.firebaseio.com", projectId: "besuad", storageBucket: "besuad.firebasestorage.app", messagingSenderId: "641705823615", appId: "1:641705823615:web:6502b2511ff8c0f251de4a" };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const APP_NODE_NAME = "app2";
+        const APP_NODE_NAME = "app3";
 
         let rawShikelaNewsData = {}, rawNewNewsData = {}, localCachedBroadcasts = [];
         let isOpeningArticle = false, bannerCreated = false;
@@ -813,13 +813,13 @@
                 Object.keys(dataObj).forEach(key => {
                     const item = dataObj[key];
                     if (typeof item === "object" && item !== null) {
-                        let resolvedCategory = (item.category || defaultCat).replace(/Shikela/gi, "Beka Tips");
+                        let resolvedCategory = (item.category || defaultCat).replace(/Shikela/gi, "Go Tip");
                         localCachedBroadcasts.push({ id: key, ...item, title: item.title || item.newsTitle || resolvedCategory, category: resolvedCategory, resolvedTimestamp: extractValidTimestamp(item) });
                     }
                 });
             };
-            addNode(rawShikelaNewsData, "Beka Tips Update");
-            addNode(rawNewNewsData, "Beka Tips Tips");
+            addNode(rawShikelaNewsData, "Go Tip Update");
+            addNode(rawNewNewsData, "Go Tip Tips");
             localCachedBroadcasts.sort((a, b) => b.resolvedTimestamp - a.resolvedTimestamp);
             
             if (appIsReadyForContent) {
@@ -833,9 +833,9 @@
         }
 
         function buildSingleNewsCardHTML(item) {
-            const headline = item.title || item.newsTitle || "Beka Tips Update";
+            const headline = item.title || item.newsTitle || "Go Tip Update";
             const fullContent = item.content || item.message || "";
-            const displayCategory = item.category || "Beka Tips Update";
+            const displayCategory = item.category || "Go Tip Update";
             const imageUrl = item.imageUrl || item.image || "";
             const previewContent = fullContent.length > 120 ? fullContent.substring(0, 120).trim() + "..." : fullContent;
             const numericalTime = item.resolvedTimestamp || Date.now();
