@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Go Tip - Contact Support</title>
+    <title>Beka Tips - Contact Support</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -223,7 +223,7 @@
             <div class="page-content-card">
                 <div class="contact-header">
                     <h2>We Are Here to Help</h2>
-                    <p>At Go Tip, community is at the heart of everything we do. Whether you are an Ethiopian freelancer looking for guidance on a specific daily job vacancy, an entrepreneur wanting to share a profitable business tip, or a brand interested in advertising on our platform, our dedicated support team is ready to assist you.</p>
+                    <p>At Beka Tips, community is at the heart of everything we do. Whether you are an Ethiopian freelancer looking for guidance on a specific daily job vacancy, an entrepreneur wanting to share a profitable business tip, or a brand interested in advertising on our platform, our dedicated support team is ready to assist you.</p>
                     <p>Because we handle a high volume of inquiries regarding digital work and tech updates, we have provided multiple channels for you to reach us. Choose the method that works best for you below.</p>
                 </div>
 
@@ -285,7 +285,7 @@
                 </form>
 
                 <div class="guidelines-box">
-                    <strong>Support Guidelines:</strong> Please note that Go Tip acts as an aggregator for online job postings. We do not directly hire for the external vacancies listed on our site. Please do not send CVs or resumes through this contact form, as they will not be forwarded to third-party employers.
+                    <strong>Support Guidelines:</strong> Please note that Beka Tips acts as an aggregator for online job postings. We do not directly hire for the external vacancies listed on our site. Please do not send CVs or resumes through this contact form, as they will not be forwarded to third-party employers.
                 </div>
             </div>
         </main>
@@ -330,7 +330,7 @@
         // ==========================================
         // 🔴 APP 2 ISOLATION CONFIGURATION
         // ==========================================
-        const APP_NODE = "app3";
+        const APP_NODE = "app2";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCqwgwiukwKb7o6gwnaLoPQSWc7BfMDuYQ",
@@ -440,7 +440,7 @@
             const message = document.getElementById('message').value;
 
             try {
-                // Route message directly into app3 folder
+                // Route message directly into app2 folder
                 const messagesRef = ref(database, `${APP_NODE}/messages`);
                 const newMessageRef = push(messagesRef);
                 
@@ -452,7 +452,7 @@
                     timestamp: new Date().toISOString()
                 });
 
-                showStatusModal('success', 'Message Sent!', 'Thank you for contacting Go Tip! Your message has been sent successfully.');
+                showStatusModal('success', 'Message Sent!', 'Thank you for contacting Beka Tips! Your message has been sent successfully.');
                 contactForm.reset();
                 selectedSubjectText.textContent = 'Select an inquiry type...';
                 selectedSubjectText.classList.add('placeholder-text');
