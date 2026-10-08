@@ -144,7 +144,7 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Initialize Android Project
+      - name: Initialize Android Project & Inject Permissions
         run: |
           rm -rf android
           npx cap add android
@@ -153,7 +153,9 @@ jobs:
           if [ -f node_modules/capacitor-admob-nextgen/scripts/admob-manifest.js ]; then node node_modules/capacitor-admob-nextgen/scripts/admob-manifest.js; fi
           if [ -f node_modules/capacitor-admob-nextgen/scripts/admob-native.js ]; then node node_modules/capacitor-admob-nextgen/scripts/admob-native.js; fi
           
+          # Inject required Android permissions
           sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />' android/app/src/main/AndroidManifest.xml
 
       - name: Enable Android 15 Edge-To-Edge Compatibility
         run: |
