@@ -11,8 +11,8 @@ env:
   PACKAGE_NAME: "com.bekatips.app"
   ADMOB_APP_ID: "ca-app-pub-1118823918279022~8410967279" 
   # --- EDIT APP VERSION & VERSION CODE HERE ---
-  APP_VERSION: "1.0.9"
-  VERSION_CODE: "53"
+  APP_VERSION: "1.0.8"
+  VERSION_CODE: "52"
 
 jobs:
   build:
@@ -49,7 +49,7 @@ jobs:
           mkdir -p www
           rsync -av --exclude='.git' --exclude='.github' --exclude='www' --exclude='node_modules' ./ www/
 
-          # Create Native Bridge JS with Top White Space Stripper, Back Button and Offline Logic
+          # Create Native Bridge JS with Top Header Remover, Back Button and Offline Logic
           cat << 'EOF' > bridge.js
           import { Capacitor } from '@capacitor/core';
           import { AdMobNextGen } from 'capacitor-admob-nextgen';
@@ -61,20 +61,34 @@ jobs:
           window.AdMobPlugin = AdMobNextGen;
           window.OneSignal = OneSignalPlugin.default || OneSignalPlugin;
 
-          // --- 0. REMOVE TOP UNWANTED WHITE SPACE ---
+          // --- 0. FULLY HIDE TOP WHITE HEADER ---
           const stripTopWhitespace = () => {
-            const style = document.createElement('style');
-            style.innerHTML = `
-              html, body {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-              }
-              header:first-of-type, .top-bar-extra, .site-header-top {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-              }
-            `;
-            document.head.appendChild(style);
+            if (!document.getElementById('remove-top-header-style')) {
+              const style = document.createElement('style');
+              style.id = 'remove-top-header-style';
+              style.innerHTML = `
+                html, body {
+                  margin-top: 0 !important;
+                  padding-top: 0 !important;
+                }
+                header,
+                .site-header,
+                .site-header-top,
+                #masthead,
+                .top-bar-extra,
+                .top-header,
+                .main-header {
+                  display: none !important;
+                  height: 0 !important;
+                  min-height: 0 !important;
+                  visibility: hidden !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  overflow: hidden !important;
+                }
+              `;
+              (document.head || document.documentElement).appendChild(style);
+            }
           };
 
           if (document.readyState === 'loading') {
@@ -82,6 +96,10 @@ jobs:
           } else {
             stripTopWhitespace();
           }
+
+          // Continuously re-apply in case dynamic single-page routing rebuilds the header
+          const observer = new MutationObserver(stripTopWhitespace);
+          observer.observe(document, { childList: true, subtree: true });
 
           // --- 1. HARDWARE BACK BUTTON FIX ---
           App.addListener('backButton', ({ canGoBack }) => {
