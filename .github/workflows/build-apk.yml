@@ -1,4 +1,4 @@
-Name: Convert PWA to Release AAB (Beka Tips)
+name: Convert PWA to Release AAB (Beka Tips)
 
 on:
   push:
