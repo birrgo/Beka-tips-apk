@@ -1,4 +1,4 @@
-name: Convert PWA to Release AAB (BekaTips)
+Name: Convert PWA to Release AAB (BekaTips)
 
 on:
   push:
@@ -10,7 +10,7 @@ env:
   APP_NAME: "BekaTips"
   PACKAGE_NAME: "com.bekatips.app"
   ADMOB_APP_ID: "ca-app-pub-1118823918279022~8410967279" 
-  APP_VERSION: "1.0.1"
+  APP_VERSION: "1.1.1"
   VERSION_CODE: "55"
 
 jobs:
@@ -193,4 +193,175 @@ jobs:
           import com.onesignal.notifications.INotificationServiceExtension;
           import com.onesignal.notifications.IMutableNotification;
           
-          import java
+          import java.io.InputStream;
+          import java.net.URL;
+
+          public class CustomNotificationService implements INotificationServiceExtension {
+              @Override
+              public void onNotificationReceived(INotificationReceivedEvent event) {
+                  Context context = event.getContext();
+                  IMutableNotification mutableNotification = event.getNotification();
+
+                  String customImgUrl = null;
+                  if (mutableNotification.getAdditionalData() != null) {
+                      customImgUrl = mutableNotification.getAdditionalData().optString("custom_heads_up_image", null);
+                  }
+
+                  if (customImgUrl != null) {
+                      try {
+                          InputStream in = new URL(customImgUrl).openStream();
+                          final Bitmap bitmap = BitmapFactory.decodeStream(in);
+
+                          mutableNotification.setExtender(builder -> {
+                              RemoteViews customView = new RemoteViews(context.getPackageName(), R.layout.custom_heads_up_notification);
+                              customView.setImageViewBitmap(R.id.img_main, bitmap);
+                              builder.setCustomHeadsUpContentView(customView);
+                              builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+                              return builder;
+                          });
+                      } catch (Exception e) {
+                          e.printStackTrace();
+                      }
+                  }
+              }
+          }
+          EOF
+
+          # 3. Register the Java extension inside AndroidManifest.xml
+          sed -i '/<\/application>/i \        <meta-data android:name="com.onesignal.NotificationServiceExtension" android:value="com.bekatips.app.CustomNotificationService" />' android/app/src/main/AndroidManifest.xml
+
+      - name: Set Custom App and Notification Icons
+        run: |
+          python3 -m pip install --upgrade pillow --quiet
+
+          # Notification icons
+          mkdir -p android/app/src/main/res/drawable
+          cp s2.png android/app/src/main/res/drawable/ic_stat_onesignal_default.png 2>/dev/null || true
+          cp s2.png android/app/src/main/res/drawable/ic_onesignal_large_icon_default.png 2>/dev/null || true
+
+          # Set adaptive icon background color to clean white
+          mkdir -p android/app/src/main/res/values
+          cat << 'EOF' > android/app/src/main/res/values/ic_launcher_background.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="ic_launcher_background">#FFFFFF</color>
+          </resources>
+          EOF
+
+          # Generate safe-padded adaptive foreground icons to prevent edge clipping
+          python3 - << 'EOF'
+          import os
+          from PIL import Image
+
+          if os.path.exists("s.png"):
+              img = Image.open("s.png").convert("RGBA")
+              
+              densities = {
+                  "mipmap-mdpi": (48, 108),
+                  "mipmap-hdpi": (72, 162),
+                  "mipmap-xhdpi": (96, 216),
+                  "mipmap-xxhdpi": (144, 324),
+                  "mipmap-xxxhdpi": (192, 432)
+              }
+              
+              for folder, (icon_sz, fg_sz) in densities.items():
+                  target_dir = f"android/app/src/main/res/{folder}"
+                  os.makedirs(target_dir, exist_ok=True)
+                  
+                  # Legacy icons
+                  legacy_icon = img.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS)
+                  legacy_icon.save(f"{target_dir}/ic_launcher.png")
+                  legacy_icon.save(f"{target_dir}/ic_launcher_round.png")
+                  
+                  # Adaptive foreground: safe zone is 66% of fg_sz
+                  fg_canvas = Image.new("RGBA", (fg_sz, fg_sz), (0, 0, 0, 0))
+                  safe_sz = int(fg_sz * 0.66)
+                  resized_logo = img.resize((safe_sz, safe_sz), Image.Resampling.LANCZOS)
+                  offset = ((fg_sz - safe_sz) // 2, (fg_sz - safe_sz) // 2)
+                  fg_canvas.paste(resized_logo, offset, resized_logo)
+                  fg_canvas.save(f"{target_dir}/ic_launcher_foreground.png")
+              print("App icons generated successfully with adaptive safe-zone padding.")
+          else:
+              print("Warning: s.png not found!")
+          EOF
+
+      - name: Fix Kotlin Clashes
+        run: |
+          echo "" >> android/app/build.gradle
+          echo "configurations.all {" >> android/app/build.gradle
+          echo "    resolutionStrategy {" >> android/app/build.gradle
+          echo "        force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'" >> android/app/build.gradle
+          echo "        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'" >> android/app/build.gradle
+          echo "        force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'" >> android/app/build.gradle
+          echo "    }" >> android/app/build.gradle
+          echo "}" >> android/app/build.gradle
+
+      - name: Target Android SDK 36
+        run: |
+          if [ -f android/variables.gradle ]; then
+            sed -i 's/targetSdkVersion = .*/targetSdkVersion = 36/' android/variables.gradle
+            sed -i 's/compileSdkVersion = .*/compileSdkVersion = 36/' android/variables.gradle
+            sed -i 's/minSdkVersion = .*/minSdkVersion = 24/' android/variables.gradle
+          fi
+          sed -i 's/targetSdkVersion .*/targetSdkVersion 36/' android/app/build.gradle
+          sed -i 's/compileSdkVersion .*/compileSdkVersion 36/' android/app/build.gradle
+          sed -i 's/minSdk .*/minSdk 24/' android/app/build.gradle
+          sed -i 's/minSdkVersion .*/minSdkVersion 24/' android/app/build.gradle
+
+      - name: Set Version Code and Name
+        run: |
+          sed -i 's/versionCode [0-9]*/versionCode ${{ env.VERSION_CODE }}/' android/app/build.gradle
+          sed -i 's/versionName "[^"]*"/versionName "${{ env.APP_VERSION }}"/' android/app/build.gradle
+
+      - name: Add Google Services JSON
+        run: |
+          cat << 'EOF' > android/app/google-services.json
+          ${{ secrets.GOOGLE_SERVICES_JSON }}
+          EOF
+
+      - name: Decode Base64 Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.jks
+
+      - name: Configure Signing in Gradle
+        run: |
+          cat << 'EOF' >> android/app/build.gradle
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file('release.jks')
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled true
+                      shrinkResources true
+                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                  }
+              }
+          }
+          EOF
+
+      - name: Build Signed Release AAB
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew bundleRelease
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Move & Rename AAB Output
+        run: mv android/app/build/outputs/bundle/release/app-release.aab bekatips.aab
+
+      - name: Upload Signed Release AAB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bekatips-aab
+          path: bekatips.aab
