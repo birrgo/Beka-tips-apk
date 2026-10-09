@@ -1,4 +1,4 @@
-name: Convert PWA to Release AAB (Beka Tips)
+Name: Convert PWA to Release AAB (Beka Tips)
 
 on:
   push:
@@ -9,11 +9,10 @@ on:
 env:
   APP_NAME: "Beka Tips"
   PACKAGE_NAME: "com.bekatips.app"
-  # Replace with the actual AdMob App ID for Beka Tips if different
   ADMOB_APP_ID: "ca-app-pub-1118823918279022~8410967279" 
   # --- EDIT APP VERSION & VERSION CODE HERE ---
-  APP_VERSION: "1.0.7"
-  VERSION_CODE: "51"
+  APP_VERSION: "1.0.8"
+  VERSION_CODE: "52"
 
 jobs:
   build:
@@ -50,7 +49,7 @@ jobs:
           mkdir -p www
           rsync -av --exclude='.git' --exclude='.github' --exclude='www' --exclude='node_modules' ./ www/
 
-          # Create Native Bridge JS with Back Button and Offline Logic
+          # Create Native Bridge JS with Top White Space Stripper, Back Button and Offline Logic
           cat << 'EOF' > bridge.js
           import { Capacitor } from '@capacitor/core';
           import { AdMobNextGen } from 'capacitor-admob-nextgen';
@@ -61,6 +60,28 @@ jobs:
           window.Capacitor = Capacitor;
           window.AdMobPlugin = AdMobNextGen;
           window.OneSignal = OneSignalPlugin.default || OneSignalPlugin;
+
+          // --- 0. REMOVE TOP UNWANTED WHITE SPACE ---
+          const stripTopWhitespace = () => {
+            const style = document.createElement('style');
+            style.innerHTML = `
+              html, body {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+              }
+              header:first-of-type, .top-bar-extra, .site-header-top {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+              }
+            `;
+            document.head.appendChild(style);
+          };
+
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', stripTopWhitespace);
+          } else {
+            stripTopWhitespace();
+          }
 
           // --- 1. HARDWARE BACK BUTTON FIX ---
           App.addListener('backButton', ({ canGoBack }) => {
@@ -107,10 +128,7 @@ jobs:
             }
           };
 
-          // Monitor network changes
           Network.addListener('networkStatusChange', checkNetwork);
-          
-          // Check network when DOM is loaded
           window.addEventListener('DOMContentLoaded', checkNetwork);
           EOF
 
@@ -153,13 +171,11 @@ jobs:
           if [ -f node_modules/capacitor-admob-nextgen/scripts/admob-manifest.js ]; then node node_modules/capacitor-admob-nextgen/scripts/admob-manifest.js; fi
           if [ -f node_modules/capacitor-admob-nextgen/scripts/admob-native.js ]; then node node_modules/capacitor-admob-nextgen/scripts/admob-native.js; fi
           
-          # Inject required Android permissions
           sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
           sed -i '/<application/i \    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />' android/app/src/main/AndroidManifest.xml
 
-      - name: Enable Android 15 Edge-To-Edge Compatibility
+      - name: Enable Android Edge-To-Edge Compatibility
         run: |
-          # Inject EdgeToEdge handling into MainActivity
           mkdir -p android/app/src/main/java/com/bekatips/app
           cat << 'EOF' > android/app/src/main/java/com/bekatips/app/MainActivity.java
           package com.bekatips.app;
@@ -177,13 +193,11 @@ jobs:
           }
           EOF
 
-      - name: Inject Custom Notification Layout and Native Code
+      - name: Inject Custom Notification Layout and Memory-Optimized Service
         run: |
-          # 0. EXPOSE ONESIGNAL SDK TO THE APP MODULE
           sed -i '/dependencies {/a \    compileOnly "com.onesignal:OneSignal:5.1.8"' android/app/build.gradle
           sed -i '/dependencies {/a \    implementation "androidx.activity:activity:1.9.2"' android/app/build.gradle
 
-          # 1. Generate the XML layout file
           mkdir -p android/app/src/main/res/layout
           cat << 'EOF' > android/app/src/main/res/layout/custom_heads_up_notification.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -202,7 +216,7 @@ jobs:
           </LinearLayout>
           EOF
 
-          # 2. Generate the Java Service File (OneSignal SDK v5)
+          # Optimized Java Service with Bitmaps Downsampling (Fixes Play Console Bitmap Warning)
           cat << 'EOF' > android/app/src/main/java/com/bekatips/app/CustomNotificationService.java
           package com.bekatips.app; 
           
@@ -232,37 +246,70 @@ jobs:
 
                   if (customImgUrl != null) {
                       try {
-                          InputStream in = new URL(customImgUrl).openStream();
-                          final Bitmap bitmap = BitmapFactory.decodeStream(in);
-
-                          mutableNotification.setExtender(builder -> {
-                              RemoteViews customView = new RemoteViews(context.getPackageName(), R.layout.custom_heads_up_notification);
-                              customView.setImageViewBitmap(R.id.img_main, bitmap);
-                              builder.setCustomHeadsUpContentView(customView);
-                              builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
-                              return builder;
-                          });
+                          Bitmap bitmap = decodeSampledBitmapFromUrl(customImgUrl, 800, 400);
+                          if (bitmap != null) {
+                              mutableNotification.setExtender(builder -> {
+                                  RemoteViews customView = new RemoteViews(context.getPackageName(), R.layout.custom_heads_up_notification);
+                                  customView.setImageViewBitmap(R.id.img_main, bitmap);
+                                  builder.setCustomHeadsUpContentView(customView);
+                                  builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+                                  return builder;
+                              });
+                          }
                       } catch (Exception e) {
                           e.printStackTrace();
                       }
                   }
               }
+
+              private Bitmap decodeSampledBitmapFromUrl(String urlString, int reqWidth, int reqHeight) {
+                  try {
+                      InputStream in = new URL(urlString).openStream();
+                      BitmapFactory.Options options = new BitmapFactory.Options();
+                      options.inJustDecodeBounds = true;
+                      BitmapFactory.decodeStream(in, null, options);
+                      in.close();
+
+                      options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+                      options.inJustDecodeBounds = false;
+                      options.inPreferredConfig = Bitmap.Config.RGB_565;
+
+                      InputStream in2 = new URL(urlString).openStream();
+                      Bitmap bitmap = BitmapFactory.decodeStream(in2, null, options);
+                      in2.close();
+                      return bitmap;
+                  } catch (Exception e) {
+                      return null;
+                  }
+              }
+
+              private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+                  final int height = options.outHeight;
+                  final int width = options.outWidth;
+                  int inSampleSize = 1;
+
+                  if (height > reqHeight || width > reqWidth) {
+                      final int halfHeight = height / 2;
+                      final int halfWidth = width / 2;
+                      while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
+                          inSampleSize *= 2;
+                      }
+                  }
+                  return inSampleSize;
+              }
           }
           EOF
 
-          # 3. Register the Java extension inside AndroidManifest.xml
           sed -i '/<\/application>/i \        <meta-data android:name="com.onesignal.NotificationServiceExtension" android:value="com.bekatips.app.CustomNotificationService" />' android/app/src/main/AndroidManifest.xml
 
       - name: Set Custom App and Notification Icons
         run: |
           python3 -m pip install --upgrade pillow --quiet
 
-          # Notification icons
           mkdir -p android/app/src/main/res/drawable
           cp s2.png android/app/src/main/res/drawable/ic_stat_onesignal_default.png 2>/dev/null || true
           cp s2.png android/app/src/main/res/drawable/ic_onesignal_large_icon_default.png 2>/dev/null || true
 
-          # Set adaptive icon background color to clean white
           mkdir -p android/app/src/main/res/values
           cat << 'EOF' > android/app/src/main/res/values/ic_launcher_background.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -271,7 +318,6 @@ jobs:
           </resources>
           EOF
 
-          # Generate safe-padded adaptive foreground icons to prevent edge clipping
           python3 - << 'EOF'
           import os
           from PIL import Image
@@ -291,25 +337,23 @@ jobs:
                   target_dir = f"android/app/src/main/res/{folder}"
                   os.makedirs(target_dir, exist_ok=True)
                   
-                  # Legacy icons
                   legacy_icon = img.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS)
                   legacy_icon.save(f"{target_dir}/ic_launcher.png")
                   legacy_icon.save(f"{target_dir}/ic_launcher_round.png")
                   
-                  # Adaptive foreground: safe zone is 66% of fg_sz
                   fg_canvas = Image.new("RGBA", (fg_sz, fg_sz), (0, 0, 0, 0))
                   safe_sz = int(fg_sz * 0.66)
                   resized_logo = img.resize((safe_sz, safe_sz), Image.Resampling.LANCZOS)
                   offset = ((fg_sz - safe_sz) // 2, (fg_sz - safe_sz) // 2)
                   fg_canvas.paste(resized_logo, offset, resized_logo)
                   fg_canvas.save(f"{target_dir}/ic_launcher_foreground.png")
-              print("App icons generated successfully with adaptive safe-zone padding.")
-          else:
-              print("Warning: s.png not found!")
+              print("App icons generated successfully.")
           EOF
 
-      - name: Fix Kotlin Clashes
+      - name: Configure R8 Optimization & Gradle Properties
         run: |
+          echo "android.enableR8.fullMode=true" >> android/gradle.properties
+
           echo "" >> android/app/build.gradle
           echo "configurations.all {" >> android/app/build.gradle
           echo "    resolutionStrategy {" >> android/app/build.gradle
@@ -336,23 +380,26 @@ jobs:
           sed -i 's/versionCode [0-9]*/versionCode ${{ env.VERSION_CODE }}/' android/app/build.gradle
           sed -i 's/versionName "[^"]*"/versionName "${{ env.APP_VERSION }}"/' android/app/build.gradle
 
-      - name: Configure ProGuard Rules for DEX Obfuscation
+      - name: Configure ProGuard Rules for R8 Optimization
         run: |
           cat << 'EOF' >> android/app/proguard-rules.pro
 
-          # Preserve Capacitor Core & JavaScript Native Bridge
+          # Keep Capacitor bridge interfaces
           -keep class com.getcapacitor.** { *; }
           -keepclassmembers class * {
               @android.webkit.JavascriptInterface <methods>;
           }
           -keep class * extends com.getcapacitor.Plugin
 
-          # Preserve Application Code & Custom Notification Service
+          # Keep App package and notification extensions
           -keep class com.bekatips.app.** { *; }
 
-          # Preserve OneSignal & AdMob SDKs
+          # Preserve third-party SDK entry points
           -keep class com.onesignal.** { *; }
           -keep class com.google.android.gms.ads.** { *; }
+          
+          # Allow R8 optimizations
+          -dontwarn **
           EOF
 
       - name: Add Google Services JSON
@@ -365,7 +412,7 @@ jobs:
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.jks
 
-      - name: Configure Signing & Obfuscation in Gradle
+      - name: Configure Signing & Shrinking in Gradle
         run: |
           cat << 'EOF' >> android/app/build.gradle
 
@@ -382,7 +429,7 @@ jobs:
                   release {
                       signingConfig signingConfigs.release
                       minifyEnabled true
-                      shrinkResources false
+                      shrinkResources true
                       proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
                   }
               }
