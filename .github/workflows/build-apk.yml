@@ -10,8 +10,8 @@ env:
   APP_NAME: "BekaTips"
   PACKAGE_NAME: "com.bekatips.app"
   ADMOB_APP_ID: "ca-app-pub-1118823918279022~8410967279" 
-  APP_VERSION: "1.1.1"
-  VERSION_CODE: "55"
+  APP_VERSION: "1.1.2"
+  VERSION_CODE: "56"
 
 jobs:
   build:
@@ -114,6 +114,9 @@ jobs:
 
           npx esbuild bridge.js --bundle --minify --outfile=www/native-bridge.js
 
+          # Inject script tag into index.html (and any HTML files in www) so native-bridge runs
+          find www -maxdepth 2 -name "*.html" -exec sed -i 's/<\/head>/<script src="native-bridge.js"><\/script><\/head>/g' {} +
+
       - name: Create Capacitor Config
         run: |
           echo '{' > capacitor.config.json
@@ -178,7 +181,7 @@ jobs:
           </LinearLayout>
           EOF
 
-          # 2. Generate the Java Service File (OneSignal SDK v5)
+          # 2. Generate the Java Service File (OneSignal SDK v5 with explicit Extender signature)
           mkdir -p android/app/src/main/java/com/bekatips/app
           cat << 'EOF' > android/app/src/main/java/com/bekatips/app/CustomNotificationService.java
           package com.bekatips.app; 
@@ -207,17 +210,20 @@ jobs:
                       customImgUrl = mutableNotification.getAdditionalData().optString("custom_heads_up_image", null);
                   }
 
-                  if (customImgUrl != null) {
+                  if (customImgUrl != null && !customImgUrl.isEmpty()) {
                       try {
                           InputStream in = new URL(customImgUrl).openStream();
                           final Bitmap bitmap = BitmapFactory.decodeStream(in);
 
-                          mutableNotification.setExtender(builder -> {
-                              RemoteViews customView = new RemoteViews(context.getPackageName(), R.layout.custom_heads_up_notification);
-                              customView.setImageViewBitmap(R.id.img_main, bitmap);
-                              builder.setCustomHeadsUpContentView(customView);
-                              builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
-                              return builder;
+                          mutableNotification.setExtender(new NotificationCompat.Extender() {
+                              @Override
+                              public NotificationCompat.Builder extend(NotificationCompat.Builder builder) {
+                                  RemoteViews customView = new RemoteViews(context.getPackageName(), R.layout.custom_heads_up_notification);
+                                  customView.setImageViewBitmap(R.id.img_main, bitmap);
+                                  builder.setCustomHeadsUpContentView(customView);
+                                  builder.setStyle(new NotificationCompat.DecoratedCustomViewStyle());
+                                  return builder;
+                              }
                           });
                       } catch (Exception e) {
                           e.printStackTrace();
@@ -310,8 +316,9 @@ jobs:
 
       - name: Set Version Code and Name
         run: |
-          sed -i 's/versionCode [0-9]*/versionCode ${{ env.VERSION_CODE }}/' android/app/build.gradle
-          sed -i 's/versionName "[^"]*"/versionName "${{ env.APP_VERSION }}"/' android/app/build.gradle
+          sed -i -E 's/(versionCode[[:space:]]*=?[[:space:]]*)[0-9]+/\1${{ env.VERSION_CODE }}/' android/app/build.gradle
+          sed -i -E 's/(versionName[[:space:]]*=?[[:space:]]*)".*"/\1"${{ env.APP_VERSION }}"/' android/app/build.gradle
+          grep -nE 'versionCode|versionName' android/app/build.gradle
 
       - name: Add Google Services JSON
         run: |
