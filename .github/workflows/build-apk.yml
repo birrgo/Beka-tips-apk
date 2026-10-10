@@ -10,8 +10,8 @@ env:
   APP_NAME: "BekaTips"
   PACKAGE_NAME: "com.bekatips.app"
   ADMOB_APP_ID: "ca-app-pub-1118823918279022~8410967279" 
-  APP_VERSION: "1.1.2"
-  VERSION_CODE: "56"
+  APP_VERSION: "1.1.3"
+  VERSION_CODE: "57"
 
 jobs:
   build:
@@ -48,7 +48,7 @@ jobs:
           mkdir -p www
           rsync -av --exclude='.git' --exclude='.github' --exclude='www' --exclude='node_modules' ./ www/
 
-          # Create Native Bridge JS with Back Button and Offline Logic
+          # Create Native Bridge JS with AdMob Auto-Init, Back Button, and Offline Logic
           cat << 'EOF' > bridge.js
           import { Capacitor } from '@capacitor/core';
           import { AdMobNextGen } from 'capacitor-admob-nextgen';
@@ -60,7 +60,46 @@ jobs:
           window.AdMobPlugin = AdMobNextGen;
           window.OneSignal = OneSignalPlugin.default || OneSignalPlugin;
 
-          // --- 1. HARDWARE BACK BUTTON FIX ---
+          // --- 1. ADMOB AUTO-INITIALIZATION & BANNER ---
+          const initAdMob = async () => {
+            if (Capacitor.isNativePlatform()) {
+              try {
+                // Initialize AdMob SDK
+                await AdMobNextGen.initialize();
+
+                // Request tracking permission
+                await AdMobNextGen.requestConsent();
+
+                // Load bottom banner automatically
+                // Change 'isTesting: false' and use your real Ad Unit ID for production
+                await AdMobNextGen.showBanner({
+                  adId: 'ca-app-pub-3940256099942544/6300978111', // Test Banner ID
+                  position: 'BOTTOM',
+                  isTesting: true
+                });
+                console.log('AdMob successfully initialized');
+              } catch (err) {
+                console.error('AdMob init error:', err);
+              }
+            }
+          };
+
+          // Expose helper to trigger interstitial ads on demand from anywhere in your HTML
+          window.showInterstitialAd = async (adUnitId = 'ca-app-pub-3940256099942544/1033173712') => {
+            if (Capacitor.isNativePlatform()) {
+              try {
+                await AdMobNextGen.prepareInterstitial({
+                  adId: adUnitId,
+                  isTesting: true
+                });
+                await AdMobNextGen.showInterstitial();
+              } catch (err) {
+                console.error('Interstitial error:', err);
+              }
+            }
+          };
+
+          // --- 2. HARDWARE BACK BUTTON FIX ---
           App.addListener('backButton', ({ canGoBack }) => {
             if (canGoBack) {
               window.history.back();
@@ -69,7 +108,7 @@ jobs:
             }
           });
 
-          // --- 2. OFFLINE / LOW CONNECTION POPUP ---
+          // --- 3. OFFLINE / LOW CONNECTION POPUP ---
           const checkNetwork = async () => {
             const status = await Network.getStatus();
             const existing = document.getElementById('capacitor-offline-overlay');
@@ -108,8 +147,11 @@ jobs:
           // Monitor network changes
           Network.addListener('networkStatusChange', checkNetwork);
           
-          // Check network when DOM is loaded
-          window.addEventListener('DOMContentLoaded', checkNetwork);
+          // Execute tasks when DOM is loaded
+          window.addEventListener('DOMContentLoaded', () => {
+            checkNetwork();
+            initAdMob();
+          });
           EOF
 
           npx esbuild bridge.js --bundle --minify --outfile=www/native-bridge.js
@@ -154,8 +196,8 @@ jobs:
           if [ -f node_modules/capacitor-admob-nextgen/scripts/admob-manifest.js ]; then node node_modules/capacitor-admob-nextgen/scripts/admob-manifest.js; fi
           if [ -f node_modules/capacitor-admob-nextgen/scripts/admob-native.js ]; then node node_modules/capacitor-admob-nextgen/scripts/admob-native.js; fi
           
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<application/i \    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />' android/app/src/main/AndroidManifest.xml
+          # Inject permissions cleanly inside the root manifest element after capacitor finishes sync
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />' android/app/src/main/AndroidManifest.xml
 
       - name: Inject Custom Notification Layout and Native Code
         run: |
